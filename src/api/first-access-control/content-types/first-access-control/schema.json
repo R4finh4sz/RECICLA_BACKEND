@@ -1,0 +1,14 @@
+{
+  "kind": "collectionType",
+  "collectionName": "first_access_controls",
+  "info": {
+    "singularName": "first-access-control",
+    "pluralName": "first-access-controls",
+    "displayName": "First access control"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {}
+}
