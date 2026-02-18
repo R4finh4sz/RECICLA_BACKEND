@@ -1,0 +1,14 @@
+{
+  "kind": "collectionType",
+  "collectionName": "termos",
+  "info": {
+    "singularName": "termo",
+    "pluralName": "termos",
+    "displayName": "Termo"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {}
+}
