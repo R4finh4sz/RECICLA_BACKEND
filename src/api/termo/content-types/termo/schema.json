@@ -4,11 +4,32 @@
   "info": {
     "singularName": "termo",
     "pluralName": "termos",
-    "displayName": "Termo"
+    "displayName": "Termo de Consentimento"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
-  "attributes": {}
+  "attributes": {
+    "version": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "content": {
+      "type": "richtext",
+      "required": true
+    },
+    "contentHash": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": false
+    }
+  }
 }
