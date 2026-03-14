@@ -5,7 +5,7 @@ import { getUserRoleName } from './helpers/get-user-role-name';
 
 // Exporta o handler principal do módulo Municipe.
 export default ({ strapi }: { strapi: any }) => ({
-  // Executa rotina de gestão do perfil e dados do Municipe.
+  // Executa rotina de gestão do perfil e dados do Municipe
   async execute(ctx: any) {
     const userId = ctx?.state?.user?.id;
     if (!userId) return ctx.unauthorized('Token inválido ou ausente.');
