@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "municipes",
+  "info": {
+    "singularName": "municipe",
+    "pluralName": "municipes",
+    "displayName": "Municipe"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "nome": {
+      "type": "string",
+      "required": true
+    },
+    "cpf": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "telefone": {
+      "type": "string",
+      "required": true
+    },
+    "cep": {
+      "type": "string",
+      "required": true
+    },
+    "endereco": {
+      "type": "string",
+      "required": true
+    },
+    "complemento": {
+      "type": "string"
+    },
+    "cidade": {
+      "type": "string",
+      "required": true
+    },
+    "estado": {
+      "type": "string",
+      "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}
