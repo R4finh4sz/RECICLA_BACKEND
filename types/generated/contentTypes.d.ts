@@ -430,36 +430,96 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiMasterMaster extends Struct.CollectionTypeSchema {
-  collectionName: 'masters';
+export interface ApiAuthSecurityAuthSecurity
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'auth_securities';
   info: {
-    displayName: 'Master';
-    pluralName: 'masters';
-    singularName: 'master';
+    displayName: 'Auth Security';
+    pluralName: 'auth-securities';
+    singularName: 'auth-security';
   };
   options: {
     draftAndPublish: false;
   };
   attributes: {
-    cep: Schema.Attribute.String;
-    cidade: Schema.Attribute.String;
-    cpf: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    endereco: Schema.Attribute.String;
+    emailConfirmationLastSentAt: Schema.Attribute.DateTime;
+    emailConfirmationResendCount: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<0>;
+    emailConfirmationResendWindowStart: Schema.Attribute.DateTime;
+    failedLoginAttempts: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<0>;
+    firstAccessBlockedUntil: Schema.Attribute.DateTime;
+    firstAccessFailedAttempts: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<0>;
+    lastLoginAt: Schema.Attribute.DateTime;
+    lastLoginIp: Schema.Attribute.String;
+    lastLoginUserAgent: Schema.Attribute.Text;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::master.master'
+      'api::auth-security.auth-security'
     > &
       Schema.Attribute.Private;
-    nome: Schema.Attribute.String & Schema.Attribute.Required;
+    loginBlockedUntil: Schema.Attribute.DateTime;
+    passwordResetRequestsCount: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<0>;
+    passwordResetRequestsWindowStart: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
-    rg: Schema.Attribute.String & Schema.Attribute.Required;
-    telefone: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+  };
+}
+
+export interface ApiFirstAccessControlFirstAccessControl
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'first_access_controls';
+  info: {
+    displayName: 'first-access-control';
+    pluralName: 'first-access-controls';
+    singularName: 'first-access-control';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::first-access-control.first-access-control'
+    > &
+      Schema.Attribute.Private;
+    mustAcceptTerms: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    mustChangePassword: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    mustCompleteProfile: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    passwordResetCode: Schema.Attribute.String;
+    passwordResetExpiresAt: Schema.Attribute.DateTime;
+    passwordResetRequestedAt: Schema.Attribute.DateTime;
+    passwordResetUsedAt: Schema.Attribute.DateTime;
+    profileCompletedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    tempPasswordExpiresAt: Schema.Attribute.DateTime;
+    tempPasswordIssuedAt: Schema.Attribute.DateTime;
+    tempPasswordUsedAt: Schema.Attribute.DateTime;
+    termsAcceptedAt: Schema.Attribute.DateTime;
+    termsContentHashAccepted: Schema.Attribute.String;
+    termsVersionAccepted: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -467,6 +527,149 @@ export interface ApiMasterMaster extends Struct.CollectionTypeSchema {
       'oneToOne',
       'plugin::users-permissions.user'
     >;
+  };
+}
+
+export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
+  collectionName: 'municipes';
+  info: {
+    displayName: 'Municipe';
+    pluralName: 'municipes';
+    singularName: 'municipe';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    cep: Schema.Attribute.String & Schema.Attribute.Required;
+    cidade: Schema.Attribute.String & Schema.Attribute.Required;
+    complemento: Schema.Attribute.String;
+    cpf: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    endereco: Schema.Attribute.String & Schema.Attribute.Required;
+    estado: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::municipe.municipe'
+    > &
+      Schema.Attribute.Private;
+    nome: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    telefone: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiPasswordHistoryPasswordHistory
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'password_histories';
+  info: {
+    displayName: 'Password History';
+    pluralName: 'password-histories';
+    singularName: 'password-history';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::password-history.password-history'
+    > &
+      Schema.Attribute.Private;
+    passwordHash: Schema.Attribute.Text & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+  };
+}
+
+export interface ApiTermoTermo extends Struct.CollectionTypeSchema {
+  collectionName: 'termos';
+  info: {
+    displayName: 'Termo de Consentimento';
+    pluralName: 'termos';
+    singularName: 'termo';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    content: Schema.Attribute.RichText & Schema.Attribute.Required;
+    contentHash: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::termo.termo'> &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    version: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+  };
+}
+
+export interface ApiTrustedDeviceTrustedDevice
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'trusted_devices';
+  info: {
+    displayName: 'Trusted Device';
+    pluralName: 'trusted-devices';
+    singularName: 'trusted-device';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    firstSeenAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    ip: Schema.Attribute.String & Schema.Attribute.Required;
+    lastSeenAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::trusted-device.trusted-device'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    timesSeen: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    userAgent: Schema.Attribute.Text & Schema.Attribute.Required;
   };
 }
 
@@ -981,7 +1184,12 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
-      'api::master.master': ApiMasterMaster;
+      'api::auth-security.auth-security': ApiAuthSecurityAuthSecurity;
+      'api::first-access-control.first-access-control': ApiFirstAccessControlFirstAccessControl;
+      'api::municipe.municipe': ApiMunicipeMunicipe;
+      'api::password-history.password-history': ApiPasswordHistoryPasswordHistory;
+      'api::termo.termo': ApiTermoTermo;
+      'api::trusted-device.trusted-device': ApiTrustedDeviceTrustedDevice;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;
