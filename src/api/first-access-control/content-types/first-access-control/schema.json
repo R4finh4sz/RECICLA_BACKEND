@@ -4,11 +4,35 @@
   "info": {
     "singularName": "first-access-control",
     "pluralName": "first-access-controls",
-    "displayName": "First access control"
+    "displayName": "first-access-control"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
-  "attributes": {}
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+
+    "mustCompleteProfile": { "type": "boolean", "default": false, "required": true },
+    "profileCompletedAt": { "type": "datetime" },
+
+    "mustAcceptTerms": { "type": "boolean", "default": true, "required": true },
+    "termsAcceptedAt": { "type": "datetime" },
+    "termsVersionAccepted": { "type": "string" },
+    "termsContentHashAccepted": { "type": "string" },
+
+    "mustChangePassword": { "type": "boolean", "default": false },
+    "tempPasswordExpiresAt": { "type": "datetime" },
+    "tempPasswordIssuedAt": { "type": "datetime" },
+    "tempPasswordUsedAt": { "type": "datetime" },
+
+    "passwordResetCode": { "type": "string" },
+    "passwordResetExpiresAt": { "type": "datetime" },
+    "passwordResetRequestedAt": { "type": "datetime" },
+    "passwordResetUsedAt": { "type": "datetime" }
+  }
 }
