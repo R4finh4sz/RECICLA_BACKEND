@@ -1,0 +1,19 @@
+{
+  "kind": "collectionType",
+  "collectionName": "password_histories",
+  "info": {
+    "singularName": "password-history",
+    "pluralName": "password-histories",
+    "displayName": "Password History"
+  },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "passwordHash": { "type": "text", "required": true }
+  }
+}
