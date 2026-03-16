@@ -1,132 +1,224 @@
+// Service do módulo Municipe: autenticação do munícipe e emissão de JWT.
+
+import bcrypt from 'bcryptjs';
 import { ZodError } from 'zod';
-import {
-  RegisterMunicipePublicSchema,
-  type RegisterMunicipePublicInput,
-} from '../validation/RegisterMunicipePublicSchema';
+import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeLoginSchema';
 import { sendEmail } from './helpers/send-email';
-import {
-  buildEmailConfirmationToken,
-  generateEmailConfirmationCode,
-} from './helpers/email-confirmation-code';
 
-async function getRoleIdByName(strapi: any, name: string) {
-  const role = await strapi.documents('plugin::users-permissions.role').findFirst({
-    filters: { name },
-    fields: ['id', 'name'],
-  });
-
-  if (!role) throw new Error(`Role "${name}" não encontrada`);
-  return role.id;
+function addMinutes(date: Date, minutes: number) {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() + minutes);
+  return d;
 }
 
-function isProfileComplete(data: RegisterMunicipePublicInput) {
-  return Boolean(data.endereco && data.cep && data.cidade && data.estado && data.telefone);
+function addHours(date: Date, hours: number) {
+  const d = new Date(date);
+  d.setHours(d.getHours() + hours);
+  return d;
+}
+
+function getClientIp(ctx: any) {
+  return (
+    ctx.request?.headers?.['x-forwarded-for']?.split(',')?.[0]?.trim() ||
+    ctx.request?.ip ||
+    ctx.req?.socket?.remoteAddress ||
+    'unknown'
+  );
+}
+
+function getUserAgent(ctx: any) {
+  return String(ctx.request?.headers?.['user-agent'] || 'unknown');
+}
+
+async function getOrCreateAuthSecurity(strapi: any, userId: any) {
+  let sec = await strapi.documents('api::auth-security.auth-security').findFirst({
+    filters: { user: { id: userId as any } },
+  });
+
+  if (!sec) {
+    sec = await strapi.documents('api::auth-security.auth-security').create({
+      data: { user: userId },
+    });
+  }
+
+  return sec;
 }
 
 export default ({ strapi }: { strapi: any }) => ({
   async execute(ctx: any) {
-    let payload: RegisterMunicipePublicInput;
+    // 1) Validar payload
+    let data: MunicipeLoginInput;
     try {
-      const body = ctx?.request?.body?.data || ctx?.request?.body || {};
-      payload = RegisterMunicipePublicSchema.parse(body);
+      data = MunicipeLoginSchema.parse(ctx.request.body || {});
     } catch (err) {
-      if (err instanceof ZodError) {
-        ctx.status = 400;
-        ctx.body = {
-          error: 'Dados inválidos para cadastro.',
-          details: err.issues.map((issue) => ({
-            path: issue.path,
-            message: issue.message,
-          })),
-        };
-        return;
-      }
+      if (err instanceof ZodError) return ctx.badRequest('Credenciais inválidas.');
       throw err;
     }
 
-    const email = payload.email.trim().toLowerCase();
-    const username = payload.username?.trim() || email;
+    const email = data.email.trim().toLowerCase();
+    const ip = getClientIp(ctx);
+    const userAgent = getUserAgent(ctx);
 
-    const existingUser = await strapi.documents('plugin::users-permissions.user').findFirst({
+    const genericError = () => ctx.badRequest('Credenciais inválidas.');
+
+    // 2) Buscar usuário (e role)
+    const user = await strapi.documents('plugin::users-permissions.user').findFirst({
       filters: { email },
-      fields: ['id', 'email'],
+      fields: ['id', 'email', 'password', 'blocked', 'confirmed'],
+      populate: { role: { fields: ['name'] } },
     });
-    if (existingUser) return ctx.badRequest('Já existe uma conta com este e-mail.');
 
-    const existingMunicipe = await strapi.documents('api::municipe.municipe').findFirst({
-      filters: { cpf: payload.cpf },
-      fields: ['id', 'cpf'],
+    if (!user) return genericError();
+
+    const roleName = (user as any).role?.name || (user as any).role;
+    if (roleName !== 'Municipe') return genericError();
+    if ((user as any).blocked === true) return genericError();
+
+    const userId = (user as any).id;
+
+    // 3) First-access-control
+    const fac = await strapi.documents('api::first-access-control.first-access-control').findFirst({
+      filters: { user: { id: userId as any } },
     });
-    if (existingMunicipe) return ctx.badRequest('Já existe um municipe com este CPF.');
 
-    const municipeRoleId = await getRoleIdByName(strapi, 'Municipe');
+    // 4) Controle de tentativas/bloqueio
+    const sec = await getOrCreateAuthSecurity(strapi, userId);
+    const secId = String((sec as any).documentId || (sec as any).id);
 
-    const userService = strapi.plugin('users-permissions').service('user') as any;
-    const createUser = userService.create?.bind(userService) || userService.add?.bind(userService);
-    if (!createUser) {
-      return ctx.badRequest('Service users-permissions.user não expõe create/add.');
+    const now = new Date();
+    const isFirstAccess = Boolean(fac && (fac as any).mustChangePassword);
+
+    const blockedUntil = isFirstAccess
+      ? (sec as any).firstAccessBlockedUntil
+      : (sec as any).loginBlockedUntil;
+
+    if (blockedUntil && new Date(blockedUntil).getTime() > now.getTime()) {
+      return genericError();
     }
 
-    const createdUser = await createUser({
-      email,
-      username,
-      password: payload.password,
-      confirmed: false,
-      blocked: false,
-      role: municipeRoleId,
-      provider: 'local',
-    });
+    // 5) Validar senha
+    const hashed = (user as any).password;
+    if (!hashed) return genericError();
 
-    const confirmationCode = generateEmailConfirmationCode();
-    const confirmationToken = buildEmailConfirmationToken(confirmationCode);
-    await strapi.documents('plugin::users-permissions.user').update({
-      documentId: String((createdUser as any).documentId || (createdUser as any).id),
-      data: { confirmationToken },
-    });
+    const ok = await bcrypt.compare(data.password, hashed);
 
-    const createdMunicipe = await strapi.documents('api::municipe.municipe').create({
+    if (!ok) {
+      if (isFirstAccess) {
+        const next = Number((sec as any).firstAccessFailedAttempts || 0) + 1;
+        const updateData: any = { firstAccessFailedAttempts: next };
+
+        // 5 tentativas, bloqueia por 1 hora
+        if (next >= 5) {
+          updateData.firstAccessBlockedUntil = addHours(now, 1).toISOString();
+          updateData.firstAccessFailedAttempts = 0;
+        }
+
+        await strapi.documents('api::auth-security.auth-security').update({
+          documentId: secId,
+          data: updateData,
+        });
+      } else {
+        const next = Number((sec as any).failedLoginAttempts || 0) + 1;
+        const updateData: any = { failedLoginAttempts: next };
+
+        // 5 tentativas, bloqueia por 15 min
+        if (next >= 5) {
+          updateData.loginBlockedUntil = addMinutes(now, 15).toISOString();
+          updateData.failedLoginAttempts = 0;
+        }
+
+        await strapi.documents('api::auth-security.auth-security').update({
+          documentId: secId,
+          data: updateData,
+        });
+      }
+
+      return genericError();
+    }
+
+    // 6) Notificação de novo acesso
+    const previousIp = (sec as any).lastLoginIp ? String((sec as any).lastLoginIp) : null;
+    const shouldNotifyNewAccess = previousIp !== null && previousIp !== String(ip);
+
+    // 7) Reset contadores após login OK + salvar lastLogin
+    await strapi.documents('api::auth-security.auth-security').update({
+      documentId: secId,
       data: {
-        nome: payload.nome,
-        cpf: payload.cpf,
-        estado: payload.estado,
-        endereco: payload.endereco,
-        complemento: payload.complemento,
-        cep: payload.cep,
-        cidade: payload.cidade,
-        telefone: payload.telefone,
-        user: createdUser.id,
-      },
-      fields: ['id', 'documentId'],
-    });
-
-    await strapi.documents('api::first-access-control.first-access-control').create({
-      data: {
-        user: createdUser.id,
-        mustCompleteProfile: !isProfileComplete(payload),
-        mustAcceptTerms: true,
-        mustChangePassword: false,
+        failedLoginAttempts: 0,
+        loginBlockedUntil: null,
+        firstAccessFailedAttempts: 0,
+        firstAccessBlockedUntil: null,
+        lastLoginAt: now.toISOString(),
+        lastLoginIp: ip,
+        lastLoginUserAgent: userAgent,
       },
     });
 
-    try {
-      await sendEmail(strapi, {
-        to: createdUser.email,
-        subject: 'Recicla+ - Confirme seu e-mail',
-        text:
-          `Olá, ${payload.nome}!\n\n` +
-          `Seu código de confirmação é: ${confirmationCode}\n\n` +
-          `Ele expira em 10 minutos.\n\n` +
-          `Se você não solicitou este cadastro, ignore este e-mail.`,
+    // 8) Registrar trusted-device (ip/user-agent)
+    const existingDevice = await strapi.documents('api::trusted-device.trusted-device').findFirst({
+      filters: { user: { id: userId }, ip, userAgent },
+    });
+
+    if (!existingDevice) {
+      await strapi.documents('api::trusted-device.trusted-device').create({
+        data: {
+          user: userId,
+          ip,
+          userAgent,
+          firstSeenAt: now,
+          lastSeenAt: now,
+          timesSeen: 1,
+        },
       });
-    } catch (err) {
-      strapi.log.warn(`[register-public] falha ao enviar confirmação de e-mail: ${String(err)}`);
+    } else {
+      await strapi.documents('api::trusted-device.trusted-device').update({
+        documentId: (existingDevice as any).documentId || (existingDevice as any).id,
+        data: {
+          lastSeenAt: now,
+          timesSeen: Number((existingDevice as any).timesSeen || 1) + 1,
+        },
+      });
     }
+
+    // 9) Enviar e-mail de alerta
+    if (shouldNotifyNewAccess) {
+      try {
+        await sendEmail(strapi, {
+          to: email,
+          subject: 'Recicla+ - Novo acesso à sua conta',
+          text:
+            `Detectamos um novo acesso em sua conta.\n\n` +
+            `Data/Hora: ${now.toISOString()}\n` +
+            `IP: ${ip}\n` +
+            `User-Agent: ${userAgent}\n\n` +
+            `Se não foi você, altere sua senha imediatamente.`,
+        });
+      } catch (err) {
+        strapi.log.warn(`[municipe-login] falha ao enviar alerta de novo acesso: ${String(err)}`);
+      }
+    }
+
+    // 10) JWT
+    const jwtService = strapi.plugin('users-permissions').service('jwt');
+    const expiresIn = data.rememberMe ? '30d' : '1d';
+
+    let jwt: string;
+    try {
+      jwt = jwtService.issue({ id: userId }, { expiresIn });
+    } catch {
+      const jsonwebtoken = await import('jsonwebtoken');
+      const secret = strapi.config.get('plugin.users-permissions.jwtSecret');
+      jwt = jsonwebtoken.sign({ id: userId }, secret, { expiresIn });
+    }
+
+    const isConfirmed = (user as any).confirmed === true;
 
     return {
-      municipeId: (createdMunicipe as any).id,
-      userId: createdUser.id,
-      email: createdUser.email,
-      requiresEmailConfirmation: true,
+      jwt,
+      user: { id: userId, email: (user as any).email, role: 'Municipe' },
+      expiresIn,
+      requiresEmailConfirmation: !isConfirmed,
+      confirmed: isConfirmed,
     };
   },
 });
