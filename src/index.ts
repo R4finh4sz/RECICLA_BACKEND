@@ -1,20 +1,17 @@
 // import type { Core } from '@strapi/strapi';
+import { archivePendingMunicipes } from './jobs/archive-pending-municipes';
 
 export default {
-  /**
-   * An asynchronous register function that runs before
-   * your application is initialized.
-   *
-   * This gives you an opportunity to extend code.
-   */
   register(/* { strapi }: { strapi: Core.Strapi } */) {},
 
-  /**
-   * An asynchronous bootstrap function that runs before
-   * your application gets started.
-   *
-   * This gives you an opportunity to set up your data model,
-   * run jobs, or perform some special logic.
-   */
-  bootstrap(/* { strapi }: { strapi: Core.Strapi } */) {},
+  async bootstrap({ strapi } /* : { strapi: Core.Strapi } */) {
+    const enabled = strapi.config.get('server.cron.enabled');
+    if (!enabled) return;
+
+    try {
+      await archivePendingMunicipes(strapi);
+    } catch (err) {
+      strapi.log.error(`[bootstrap] archivePendingMunicipes failed: ${String(err)}`);
+    }
+  },
 };

@@ -11,38 +11,37 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "nome": {
-      "type": "string",
-      "required": true
-    },
-    "cpf": {
-      "type": "string",
+    "nome": { "type": "string", "required": true },
+    "cpf": { "type": "string", "required": true, "unique": true },
+    "dataNascimento": { "type": "date", "required": true },
+    "telefone": { "type": "string", "required": true },
+    "cep": { "type": "string", "required": true },
+    "endereco": { "type": "string", "required": true },
+    "complemento": { "type": "string" },
+    "cidade": { "type": "string", "required": true },
+    "estado": { "type": "string", "required": true },
+
+    "statusCadastro": {
+      "type": "enumeration",
+      "enum": ["AGUARDANDO_VALIDACAO", "ATIVO", "ARQUIVADO"],
       "required": true,
-      "unique": true
+      "default": "AGUARDANDO_VALIDACAO"
     },
-    "telefone": {
-      "type": "string",
-      "required": true
+    "validadoEm": { "type": "datetime" },
+    "arquivadoEm": { "type": "datetime" },
+
+    "validadoPor": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
     },
-    "cep": {
-      "type": "string",
-      "required": true
+    "arquivadoPor": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
     },
-    "endereco": {
-      "type": "string",
-      "required": true
-    },
-    "complemento": {
-      "type": "string"
-    },
-    "cidade": {
-      "type": "string",
-      "required": true
-    },
-    "estado": {
-      "type": "string",
-      "required": true
-    },
+    "motivoArquivamento": { "type": "text" },
+
     "user": {
       "type": "relation",
       "relation": "oneToOne",

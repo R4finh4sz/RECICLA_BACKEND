@@ -1,14 +1,18 @@
-// Service do módulo Municipe: autenticação do munícipe e emissão de JWT.
-
 import { ZodError } from 'zod';
-import { RegisterMunicipePublicSchema, type RegisterMunicipePublicInput,} from '../validation/RegisterMunicipePublicSchema';
+import {
+  RegisterMunicipePublicSchema,
+  type RegisterMunicipePublicInput,
+} from '../validation/RegisterMunicipePublicSchema';
 import { sendEmail } from './helpers/send-email';
-import { buildEmailConfirmationToken,generateEmailConfirmationCode,} from './helpers/email-confirmation-code';
+import {
+  buildEmailConfirmationToken,
+  generateEmailConfirmationCode,
+} from './helpers/email-confirmation-code';
 
 function normalizeEmail(v: string) {
   return String(v || '').trim().toLowerCase();
 }
-;
+
 function normalizeCpf(v: string) {
   return String(v || '').replace(/\D/g, '');
 }
@@ -19,6 +23,13 @@ function normalizeCep(v: string) {
 
 function normalizeTelefone(v: string) {
   return String(v || '').replace(/\D/g, '');
+}
+
+function toDateOnlyString(d: Date) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 async function getMunicipeRoleId(strapi: any) {
@@ -46,7 +57,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
     const existingUser = await strapi.documents('plugin::users-permissions.user').findFirst({
       filters: { email },
-      fields: ['id', 'email'],
+      fields: ['id'],
     });
 
     if (existingUser) return ctx.badRequest('Credenciais inválidas.');
@@ -65,10 +76,7 @@ export default ({ strapi }: { strapi: any }) => ({
     const confirmationToken = buildEmailConfirmationToken(confirmationCode, Date.now());
 
     const userService = strapi.plugin('users-permissions').service('user') as any;
-    const createUser =
-      userService.create?.bind(userService) ||
-      userService.add?.bind(userService);
-
+    const createUser = userService.create?.bind(userService) || userService.add?.bind(userService);
     if (!createUser) return ctx.badRequest('Credenciais inválidas.');
 
     const createdUser = await createUser({
@@ -87,12 +95,16 @@ export default ({ strapi }: { strapi: any }) => ({
       data: {
         nome: data.nome,
         cpf,
+        dataNascimento: toDateOnlyString(new Date(data.dataNascimento)),
         telefone: normalizeTelefone(data.telefone),
         cep: normalizeCep(data.cep),
         endereco: data.endereco,
         complemento: data.complemento || null,
         cidade: data.cidade,
         estado: data.estado,
+        statusCadastro: 'AGUARDANDO_VALIDACAO',
+        validadoEm: null,
+        arquivadoEm: null,
         user: userId,
         __createdByMasterFlow: true,
       },

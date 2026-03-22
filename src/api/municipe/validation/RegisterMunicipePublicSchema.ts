@@ -27,14 +27,44 @@ function isValidCPF(cpf: string) {
   );
 }
 
+function normalizeFullName(nome: string) {
+  return String(nome || '').trim().replace(/\s+/g, ' ');
+}
+
+function isValidFullName(nome: string) {
+  const value = normalizeFullName(nome);
+  if (value.length < 3) return false;
+
+  const parts = value.split(' ').filter(Boolean);
+  if (parts.length < 2) return false;
+  if (parts.some((p) => p.length < 2)) return false;
+
+  const regex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
+  return regex.test(value);
+}
+
+function calcAge(birthDate: Date, now = new Date()) {
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const m = now.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) age--;
+  return age;
+}
+
 export const RegisterMunicipePublicSchema = z
   .object({
-    nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    nome: z
+      .string()
+      .min(3, 'Nome deve ter no mínimo 3 caracteres')
+      .transform(normalizeFullName)
+      .refine(isValidFullName, {
+        message: 'Nome completo inválido. Use apenas letras e espaços.',
+      }),
     email: z.string().email('E-mail inválido'),
     username: z.string().min(3).optional(),
     password: z.string().min(8).refine(isStrongPassword, { message: strongPasswordMessage }),
     confirmPassword: z.string().min(8),
     cpf: z.string().refine(isValidCPF, { message: 'CPF inválido' }),
+    dataNascimento: z.coerce.date(),
     endereco: z.string().min(1),
     complemento: z.string().optional(),
     cep: z.string().regex(/^\d{5}-?\d{3}$/, 'CEP inválido'),
@@ -45,6 +75,10 @@ export const RegisterMunicipePublicSchema = z
   .refine((d) => d.password === d.confirmPassword, {
     message: 'As senhas não conferem',
     path: ['confirmPassword'],
+  })
+  .refine((d) => calcAge(d.dataNascimento) >= 18, {
+    message: 'Cadastro permitido apenas para maiores de 18 anos.',
+    path: ['dataNascimento'],
   });
 
 export type RegisterMunicipePublicInput = z.infer<typeof RegisterMunicipePublicSchema>;

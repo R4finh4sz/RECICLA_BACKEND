@@ -1,12 +1,7 @@
-// Service do módulo municipe: implementa regras de negócio para gestão do perfil e dados do municipe.
-// Depende de: document API do Strapi.
-
 import { getUserRoleName } from './helpers/get-user-role-name';
 import { pickAllowedMunicipeUpdate } from './helpers/pick-allowed-municipe-update';
 
-// Exporta o handler principal do módulo municipe.
 export default ({ strapi }: { strapi: any }) => ({
-  // Executa rotina de gestão do perfil e dados do municipe.
   async execute(ctx: any) {
     const userId = ctx?.state?.user?.id;
     if (!userId) return ctx.unauthorized('Token inválido ou ausente.');
@@ -14,18 +9,26 @@ export default ({ strapi }: { strapi: any }) => ({
     const roleName = getUserRoleName(ctx);
     if (roleName !== 'Municipe') return ctx.forbidden('Apenas Municipe.');
 
-    // Bloqueios rígidos
     if (ctx?.request?.body?.nome !== undefined) return ctx.badRequest('Não é permitido alterar o nome.');
     if (ctx?.request?.body?.cpf !== undefined) return ctx.badRequest('Não é permitido alterar o CPF.');
     if (ctx?.request?.body?.email !== undefined) return ctx.badRequest('Não é permitido alterar o e-mail.');
     if (ctx?.request?.body?.user !== undefined) return ctx.badRequest('Não é permitido alterar o vínculo de usuário.');
+    if (ctx?.request?.body?.dataNascimento !== undefined) return ctx.badRequest('Não é permitido alterar a data de nascimento.');
 
     const municipe = await strapi.documents('api::municipe.municipe').findFirst({
       filters: { user: { id: userId as any } },
-      fields: ['id', 'documentId'],
+      fields: ['id', 'documentId', 'statusCadastro'],
     });
 
     if (!municipe) return ctx.notFound('Municipe não encontrado.');
+
+    const statusCadastro = String((municipe as any).statusCadastro || '');
+    if (statusCadastro === 'AGUARDANDO_VALIDACAO') {
+      return ctx.forbidden('Cadastro aguardando validação. Não é permitido alterar dados neste momento.');
+    }
+    if (statusCadastro === 'ARQUIVADO') {
+      return ctx.forbidden('Cadastro arquivado. Entre em contato com o suporte.');
+    }
 
     const updateData = pickAllowedMunicipeUpdate(ctx.request.body || {});
     if (Object.keys(updateData).length === 0) {
@@ -74,5 +77,5 @@ export default ({ strapi }: { strapi: any }) => ({
     }
 
     return updated;
-  }
+  },
 });

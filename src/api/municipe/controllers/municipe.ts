@@ -17,7 +17,7 @@ export default factories.createCoreController('api::municipe.municipe', ({ strap
   async onboardingStatus(ctx) {
     const result = await strapi.service('api::municipe.onboarding-status').execute(ctx);
     if (ctx.body) return;
-    ctx.body = { data: result, message: "Status de onboarding carregado." };
+    ctx.body = { data: result, message: 'Status de onboarding carregado.' };
   },
 
   // Executa rotina de gestão do perfil e dados do municipe.
@@ -27,39 +27,38 @@ export default factories.createCoreController('api::municipe.municipe', ({ strap
     ctx.body = { data: result, message: 'Termos de uso aceitos com sucesso!' };
   },
 
-  // Executa rotina de gestão do perfil e dados do municipe.
   async me(ctx) {
     const result = await strapi.service('api::municipe.me').execute(ctx);
     if (ctx.body) return;
-    ctx.body = { data: result, message: "Dados do municipe carregados." };
+    ctx.body = { data: result, message: 'Dados do municipe carregados.' };
   },
 
   // Executa rotina de gestão do perfil e dados do municipe.
   async updateMe(ctx) {
     const result = await strapi.service('api::municipe.update-me').execute(ctx);
     if (ctx.body) return;
-    ctx.body = { data: result, message: "Dados atualizados com sucesso!" };
+    ctx.body = { data: result, message: 'Dados atualizados com sucesso!' };
   },
 
   // Altera a senha do usuário logado após validações.
   async changePassword(ctx) {
     const result = await strapi.service('api::municipe.change-password').execute(ctx);
     if (ctx.body) return;
-    ctx.body = { data: result, message: "Senha alterada com sucesso!" };
+    ctx.body = { data: result, message: 'Senha alterada com sucesso!' };
   },
 
   // Executa rotina de gestão do perfil e dados do municipe.
   async requestPasswordReset(ctx) {
     const result = await strapi.service('api::municipe.request-password-reset').execute(ctx);
     if (ctx.body) return;
-    ctx.body = { data: result, message: "Se o usuário existir, um e-mail foi enviado com instruções." };
+    ctx.body = { data: result, message: 'Se o usuário existir, um e-mail foi enviado com instruções.' };
   },
 
   // Executa rotina de gestão do perfil e dados do municipe.
   async resetPassword(ctx) {
     const result = await strapi.service('api::municipe.reset-password').execute(ctx);
     if (ctx.body) return;
-    ctx.body = { data: result, message: "Senha redefinida com sucesso!" };
+    ctx.body = { data: result, message: 'Senha redefinida com sucesso!' };
   },
 
   // Confirma e-mail por código digitado no app.
@@ -80,6 +79,24 @@ export default factories.createCoreController('api::municipe.municipe', ({ strap
   async loginMunicipe(ctx) {
     const result = await strapi.service('api::municipe.municipe-login').execute(ctx);
     if (ctx.body) return;
-    ctx.body = { data: result, message: "Login realizado com sucesso!" };
-  }
+    ctx.body = { data: result, message: 'Login realizado com sucesso!' };
+  },
+
+  async adminPending(ctx) {
+    const result = await strapi.service('api::municipe.admin-pending').execute(ctx);
+    if (ctx.body) return;
+    ctx.body = { data: result };
+  },
+
+  async adminApprove(ctx) {
+    const result = await strapi.service('api::municipe.admin-approve').execute(ctx);
+    if (ctx.body) return;
+    ctx.body = { data: result };
+  },
+
+  async adminReject(ctx) {
+    const result = await strapi.service('api::municipe.admin-reject').execute(ctx);
+    if (ctx.body) return;
+    ctx.body = { data: result };
+  },
 }));
