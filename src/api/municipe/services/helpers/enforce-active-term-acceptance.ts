@@ -1,10 +1,10 @@
 // Service do módulo municipe: implementa regras de negócio para gestão do perfil e dados do municipe.
 // Depende de: document API do Strapi.
 
-import { getActiveTermo } from '../../../termo/utils/getActiveTermo';
-
 export async function enforceActiveTermAcceptance(strapi: any, fac: any) {
-  const termo = await getActiveTermo(strapi);
+  
+  // Chamando o serviço pelo container do Strapi
+  const termo = await strapi.service('api::termo.get-active-termo').execute();
 
   // Se não existe termo ativo, força aceite pendente
   if (!termo) {
