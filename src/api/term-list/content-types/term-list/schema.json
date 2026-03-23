@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "term_lists",
+  "info": {
+    "singularName": "term-list",
+    "pluralName": "term-lists",
+    "displayName": "Registro de Aceite (Term List)",
+    "description": "Histórico de auditoria de aceite dos termos pelo munícipe (RN 3.10.5)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "searchable": true,
+      "filterable": true
+    },
+    "termo": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::termo.termo"
+    },
+    "version": {
+      "type": "string",
+      "required": true
+    },
+    "contentHash": {
+      "type": "string",
+      "required": true
+    },
+    "acceptedAt": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}
