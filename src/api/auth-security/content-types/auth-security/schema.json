@@ -14,15 +14,21 @@
       "target": "plugin::users-permissions.user",
       "required": true
     },
+
+
     "failedLoginAttempts": { "type": "integer", "default": 0 },
     "loginBlockedUntil": { "type": "datetime" },
+
     "firstAccessFailedAttempts": { "type": "integer", "default": 0 },
     "firstAccessBlockedUntil": { "type": "datetime" },
+
     "passwordResetRequestsCount": { "type": "integer", "default": 0 },
     "passwordResetRequestsWindowStart": { "type": "datetime" },
+
     "emailConfirmationResendCount": { "type": "integer", "default": 0 },
     "emailConfirmationResendWindowStart": { "type": "datetime" },
     "emailConfirmationLastSentAt": { "type": "datetime" },
+
     "lastLoginAt": { "type": "datetime" },
     "lastLoginIp": { "type": "string" },
     "lastLoginUserAgent": { "type": "text" }
