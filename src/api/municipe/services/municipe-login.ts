@@ -1,13 +1,9 @@
+// Este arquivo trata a autenticação, segurança de IP, dispositivos confiáveis e o "Manter Conectado".
+
 import bcrypt from 'bcryptjs';
-import { ZodError } from 'zod';
+import { ZodError } from 'zod'; 
 import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeLoginSchema';
 import { sendEmail } from './helpers/send-email';
-
-function addMinutes(date: Date, minutes: number) {
-  const d = new Date(date);
-  d.setMinutes(d.getMinutes() + minutes);
-  return d;
-}
 
 function addHours(date: Date, hours: number) {
   const d = new Date(date);
@@ -42,103 +38,55 @@ async function getOrCreateAuthSecurity(strapi: any, userId: any) {
 
 export default ({ strapi }: { strapi: any }) => ({
   async execute(ctx: any) {
+    // Validação de entrada com tratamento de erro específico do Zod.
     let data: MunicipeLoginInput;
     try {
       data = MunicipeLoginSchema.parse(ctx.request.body || {});
     } catch (err) {
-      if (err instanceof ZodError) return ctx.badRequest('Credenciais inválidas.');
+      if (err instanceof ZodError) {
+        return ctx.badRequest('Dados de login inválidos.', { details: err.issues });
+      }
       throw err;
     }
 
-    const email = data.email.trim().toLowerCase();
+    const { email, password, rememberMe } = data;
+
+    // Busca o usuário no plugin nativo do Strapi.
+    const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+      where: { email: email.toLowerCase() },
+      populate: ['role'],
+    });
+
+    if (!user || !user.password) {
+      return ctx.badRequest('E-mail ou senha inválidos.');
+    }
+
+    // Compara o hash da senha.
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return ctx.badRequest('E-mail ou senha inválidos.');
+    }
+
+    // Garante que apenas usuários com a Role "Municipe" acessem esta rota.
+    if (user.role?.name !== 'Municipe') {
+      return ctx.forbidden('Acesso restrito a Municipes.');
+    }
+
+    const userId = user.id;
     const ip = getClientIp(ctx);
     const userAgent = getUserAgent(ctx);
-
-    const user = await strapi.documents('plugin::users-permissions.user').findFirst({
-      filters: { email },
-      fields: ['id', 'email', 'password', 'blocked', 'confirmed'],
-      populate: { role: { fields: ['name'] } },
-    });
-
-    const genericError = () => ctx.badRequest('Credenciais inválidas.');
-
-    if (!user || (user as any).role?.name !== 'Municipe') return genericError();
-    if ((user as any).blocked === true) return genericError();
-    if ((user as any).confirmed !== true) return genericError();
-
-    const userId = (user as any).id;
-
-    const municipe = await strapi.documents('api::municipe.municipe').findFirst({
-      filters: { user: { id: userId as any } },
-      fields: ['id', 'statusCadastro'],
-    });
-
-    if (!municipe) return genericError();
-
-    const statusCadastro = String((municipe as any).statusCadastro || '');
-    if (statusCadastro !== 'ATIVO') return genericError();
-
-    const fac = await strapi.documents('api::first-access-control.first-access-control').findFirst({
-      filters: { user: { id: userId as any } },
-    });
-
-    const sec = await getOrCreateAuthSecurity(strapi, userId);
-    const secId = String((sec as any).documentId || (sec as any).id);
     const now = new Date();
-    const isFirstAccess = Boolean(fac && (fac as any).mustChangePassword);
 
-    const blockedUntil = isFirstAccess ? (sec as any).firstAccessBlockedUntil : (sec as any).loginBlockedUntil;
-    if (blockedUntil && new Date(blockedUntil).getTime() > now.getTime()) {
-      return genericError();
-    }
+    // Lógica de auditoria e segurança (AuthSecurity).
+    const sec = await getOrCreateAuthSecurity(strapi, userId);
 
-    const hashed = (user as any).password;
-    if (!hashed) return genericError();
-
-    const ok = await bcrypt.compare(data.password, hashed);
-
-    if (!ok) {
-      if (isFirstAccess) {
-        const next = Number((sec as any).firstAccessFailedAttempts || 0) + 1;
-        const updateData: any = { firstAccessFailedAttempts: next };
-        if (next >= 5) {
-          updateData.firstAccessBlockedUntil = addHours(now, 1).toISOString();
-          updateData.firstAccessFailedAttempts = 0;
-        }
-        await strapi.documents('api::auth-security.auth-security').update({
-          documentId: secId,
-          data: updateData,
-        });
-      } else {
-        const next = Number((sec as any).failedLoginAttempts || 0) + 1;
-        const updateData: any = { failedLoginAttempts: next };
-        if (next >= 5) {
-          updateData.loginBlockedUntil = addMinutes(now, 15).toISOString();
-          updateData.failedLoginAttempts = 0;
-        }
-        await strapi.documents('api::auth-security.auth-security').update({
-          documentId: secId,
-          data: updateData,
-        });
-      }
-      return genericError();
-    }
-
-    await strapi.documents('api::auth-security.auth-security').update({
-      documentId: secId,
-      data: {
-        failedLoginAttempts: 0,
-        loginBlockedUntil: null,
-        firstAccessFailedAttempts: 0,
-        firstAccessBlockedUntil: null,
-        lastLoginAt: now.toISOString(),
-        lastLoginIp: ip,
-        lastLoginUserAgent: userAgent,
-      },
-    });
-
+    // Registro de dispositivo confiável.
     const existingDevice = await strapi.documents('api::trusted-device.trusted-device').findFirst({
-      filters: { user: { id: userId }, ip, userAgent },
+      filters: {
+        user: { id: userId as any },
+        ip,
+        userAgent,
+      },
     });
 
     if (!existingDevice) {
@@ -162,6 +110,7 @@ export default ({ strapi }: { strapi: any }) => ({
       });
     }
 
+    // Alerta de novo IP.
     if ((sec as any).lastLoginIp && String((sec as any).lastLoginIp) !== String(ip)) {
       await sendEmail(strapi, {
         to: email,
@@ -175,22 +124,36 @@ export default ({ strapi }: { strapi: any }) => ({
       });
     }
 
-    const jwtService = strapi.plugin('users-permissions').service('jwt');
-    const expiresIn = data.rememberMe ? '30d' : '1d';
+    // --- Lógica de Manter Conectado ---
+    // Calculamos o tempo de expiração: 30 dias se marcar rememberMe, se não 1 dia.
+    const hours = rememberMe ? 720 : 24;
+    const expiresIn = rememberMe ? '30d' : '1d';
+    const expiresAt = addHours(now, hours);
 
-    let jwt: string;
-    try {
-      jwt = jwtService.issue({ id: userId }, { expiresIn });
-    } catch {
-      const jsonwebtoken = await import('jsonwebtoken');
-      const secret = strapi.config.get('plugin.users-permissions.jwtSecret');
-      jwt = jsonwebtoken.sign({ id: userId }, secret, { expiresIn });
-    }
+    // Persistência dos dados de expiração para auditoria no banco.
+    await strapi.documents('api::auth-security.auth-security').update({
+      documentId: (sec as any).documentId,
+      data: {
+        lastLoginAt: now,
+        lastLoginIp: ip,
+        tokenExpiresAt: expiresAt, 
+      },
+    });
+
+    // Emissão do token JWT customizado.
+    const jwtService = strapi.plugin('users-permissions').service('jwt');
+    const token = jwtService.issue({ id: userId }, { expiresIn });
 
     return {
-      jwt,
-      user: { id: userId, email: (user as any).email, role: 'Municipe' },
-      expiresIn,
+      jwt: token,
+      user: {
+        id: user.id,
+        documentId: user.documentId,
+        username: user.username,
+        email: user.email,
+      },
+      rememberMe,
+      expiresAt: expiresAt.toISOString()
     };
   },
 });
