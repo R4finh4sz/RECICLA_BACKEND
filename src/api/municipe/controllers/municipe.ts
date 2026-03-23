@@ -27,6 +27,7 @@ export default factories.createCoreController('api::municipe.municipe', ({ strap
     ctx.body = { data: result, message: 'Termos de uso aceitos com sucesso!' };
   },
 
+  // Executa rotina de gestão do perfil e dados do municipe.
   async me(ctx) {
     const result = await strapi.service('api::municipe.me').execute(ctx);
     if (ctx.body) return;
@@ -82,21 +83,33 @@ export default factories.createCoreController('api::municipe.municipe', ({ strap
     ctx.body = { data: result, message: 'Login realizado com sucesso!' };
   },
 
+  // Lista municipes pendentes de validação (admin).
   async adminPending(ctx) {
     const result = await strapi.service('api::municipe.admin-pending').execute(ctx);
     if (ctx.body) return;
     ctx.body = { data: result };
   },
 
+  // Aprova municipe pendente (admin).
   async adminApprove(ctx) {
     const result = await strapi.service('api::municipe.admin-approve').execute(ctx);
     if (ctx.body) return;
     ctx.body = { data: result };
   },
 
+  // Rejeita/arquiva municipe (admin).
   async adminReject(ctx) {
     const result = await strapi.service('api::municipe.admin-reject').execute(ctx);
     if (ctx.body) return;
     ctx.body = { data: result };
+  },
+
+  // Consulta CEP via integração (RN 3.4.5).
+  // Eu deixei esse endpoint para eu conseguir demonstrar no Postman a validação e o preenchimento automático
+  // (endereço/cidade/estado) retorna pelo back-end com ViaCEP).
+  async lookupCep(ctx) {
+    const result = await strapi.service('api::municipe.municipe-lookup-cep').execute(ctx);
+    if (ctx.body) return;
+    ctx.body = { data: result, message: 'Consulta de CEP realizada com sucesso.' };
   },
 }));
