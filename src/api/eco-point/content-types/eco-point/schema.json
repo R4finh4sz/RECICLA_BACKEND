@@ -1,0 +1,14 @@
+{
+  "kind": "collectionType",
+  "collectionName": "eco_points",
+  "info": {
+    "singularName": "eco-point",
+    "pluralName": "eco-points",
+    "displayName": "Eco Point"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {}
+}
