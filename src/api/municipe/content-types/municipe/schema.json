@@ -11,37 +11,67 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "nome": { "type": "string", "required": true },
-    "cpf": { "type": "string", "required": true, "unique": true },
-    "dataNascimento": { "type": "date", "required": true },
-    "telefone": { "type": "string", "required": true },
-    "cep": { "type": "string", "required": true },
-    "endereco": { "type": "string", "required": true },
-    "complemento": { "type": "string" },
-    "cidade": { "type": "string", "required": true },
-    "estado": { "type": "string", "required": true },
-
+    "nome": {
+      "type": "string",
+      "required": true
+    },
+    "cpf": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "dataNascimento": {
+      "type": "date",
+      "required": true
+    },
+    "telefone": {
+      "type": "string",
+      "required": true
+    },
+    "cep": {
+      "type": "string",
+      "required": true
+    },
+    "endereco": {
+      "type": "string",
+      "required": true
+    },
+    "complemento": {
+      "type": "string"
+    },
+    "cidade": {
+      "type": "string",
+      "required": true
+    },
+    "estado": {
+      "type": "string",
+      "required": true
+    },
     "statusCadastro": {
       "type": "enumeration",
       "enum": ["AGUARDANDO_VALIDACAO", "ATIVO", "ARQUIVADO"],
       "required": true,
       "default": "AGUARDANDO_VALIDACAO"
     },
-    "validadoEm": { "type": "datetime" },
-    "arquivadoEm": { "type": "datetime" },
-
+    "validadoEm": {
+      "type": "datetime"
+    },
+    "arquivadoEm": {
+      "type": "datetime"
+    },
     "validadoPor": {
       "type": "relation",
-      "relation": "oneToOne",
+      "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
     "arquivadoPor": {
       "type": "relation",
-      "relation": "oneToOne",
+      "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
-    "motivoArquivamento": { "type": "text" },
-
+    "motivoArquivamento": {
+      "type": "text"
+    },
     "user": {
       "type": "relation",
       "relation": "oneToOne",
