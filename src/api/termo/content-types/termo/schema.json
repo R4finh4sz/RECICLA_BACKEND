@@ -4,7 +4,8 @@
   "info": {
     "singularName": "termo",
     "pluralName": "termos",
-    "displayName": "Termo de Consentimento"
+    "displayName": "Termo de Uso",
+    "description": "Termos de uso para o aplicativo. Somente um termo pode estar ativo por vez."
   },
   "options": {
     "draftAndPublish": false
@@ -25,11 +26,15 @@
       "required": true
     },
     "contentHash": {
-      "type": "string"
+      "type": "string",
+      "configurable": false,
+      "writable": true,
+      "private": false
     },
     "active": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "required": true
     }
   }
 }
