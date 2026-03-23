@@ -479,11 +479,38 @@ export interface ApiAuthSecurityAuthSecurity
   };
 }
 
+export interface ApiEcoPointEcoPoint extends Struct.CollectionTypeSchema {
+  collectionName: 'eco_points';
+  info: {
+    displayName: 'Eco Point';
+    pluralName: 'eco-points';
+    singularName: 'eco-point';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::eco-point.eco-point'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiFirstAccessControlFirstAccessControl
   extends Struct.CollectionTypeSchema {
   collectionName: 'first_access_controls';
   info: {
-    displayName: 'first-access-control';
+    displayName: 'Acess Control';
     pluralName: 'first-access-controls';
     singularName: 'first-access-control';
   };
@@ -543,7 +570,7 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
   attributes: {
     arquivadoEm: Schema.Attribute.DateTime;
     arquivadoPor: Schema.Attribute.Relation<
-      'oneToOne',
+      'manyToOne',
       'plugin::users-permissions.user'
     >;
     cep: Schema.Attribute.String & Schema.Attribute.Required;
@@ -582,7 +609,7 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     >;
     validadoEm: Schema.Attribute.DateTime;
     validadoPor: Schema.Attribute.Relation<
-      'oneToOne',
+      'manyToOne',
       'plugin::users-permissions.user'
     >;
   };
@@ -622,10 +649,47 @@ export interface ApiPasswordHistoryPasswordHistory
   };
 }
 
+export interface ApiTermListTermList extends Struct.CollectionTypeSchema {
+  collectionName: 'term_lists';
+  info: {
+    description: 'Hist\u00F3rico de auditoria de aceite dos termos pelo mun\u00EDcipe (RN 3.10.5)';
+    displayName: 'Registro de Aceite (Term List)';
+    pluralName: 'term-lists';
+    singularName: 'term-list';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    acceptedAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    contentHash: Schema.Attribute.String & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::term-list.term-list'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    termo: Schema.Attribute.Relation<'manyToOne', 'api::termo.termo'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    version: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface ApiTermoTermo extends Struct.CollectionTypeSchema {
   collectionName: 'termos';
   info: {
-    displayName: 'Termo de Consentimento';
+    description: 'Termos de uso para o aplicativo. Somente um termo pode estar ativo por vez.';
+    displayName: 'Termo de Uso';
     pluralName: 'termos';
     singularName: 'termo';
   };
@@ -633,7 +697,9 @@ export interface ApiTermoTermo extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
-    active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    active: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
     content: Schema.Attribute.RichText & Schema.Attribute.Required;
     contentHash: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
@@ -1202,9 +1268,11 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::auth-security.auth-security': ApiAuthSecurityAuthSecurity;
+      'api::eco-point.eco-point': ApiEcoPointEcoPoint;
       'api::first-access-control.first-access-control': ApiFirstAccessControlFirstAccessControl;
       'api::municipe.municipe': ApiMunicipeMunicipe;
       'api::password-history.password-history': ApiPasswordHistoryPasswordHistory;
+      'api::term-list.term-list': ApiTermListTermList;
       'api::termo.termo': ApiTermoTermo;
       'api::trusted-device.trusted-device': ApiTrustedDeviceTrustedDevice;
       'plugin::content-releases.release': PluginContentReleasesRelease;
