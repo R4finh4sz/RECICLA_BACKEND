@@ -1,5 +1,9 @@
-// Service do módulo municipe: implementa regras de negócio para gestão do perfil e dados do municipe.
-// Depende de: Zod (validação de dados); Users & Permissions (usuários/roles); document API do Strapi.
+// Reset de senha por código (deslogado).
+// Eu aplico as RN de:
+// - código tem validade de 10 min (expiração)
+// - usuário pode solicitar via e-mail
+// - senha nova precisa seguir o formato (validado no Zod)
+// Também mantenho mensagens neutras para não vazar informação.
 
 import { ZodError } from 'zod';
 import { ResetPasswordSchema, type ResetPasswordInput } from '../validation/ResetPasswordSchema';
@@ -9,23 +13,22 @@ function isExpired(expiresAt: string | Date) {
   return d.getTime() <= Date.now();
 }
 
-// Exporta o handler principal do módulo municipe.
 export default ({ strapi }: { strapi: any }) => ({
-  // Executa rotina de gestão do perfil e dados do municipe.
   async execute(ctx: any) {
     let data: ResetPasswordInput;
+
+    // 1) Validação (inclui senha e confirmar senha)
     try {
       data = ResetPasswordSchema.parse(ctx.request.body || {});
     } catch (err) {
-      // Executa rotina de gestão do perfil e dados do municipe.
       if (err instanceof ZodError) {
         ctx.status = 400;
         ctx.body = {
-          error: "Senha inválida.",
-          details: err.issues.map(issue => ({
+          error: 'Senha inválida.',
+          details: err.issues.map((issue) => ({
             path: issue.path,
-            message: issue.message
-          }))
+            message: issue.message,
+          })),
         };
         return;
       }
@@ -40,13 +43,17 @@ export default ({ strapi }: { strapi: any }) => ({
       populate: { role: { fields: ['name'] } },
     });
 
+    // Resposta neutra
     if (!user) return ctx.badRequest('Código inválido ou expirado.');
     const roleName = (user as any).role?.name || (user as any).role;
     if (roleName !== 'Municipe') return ctx.badRequest('Código inválido ou expirado.');
 
+    const userId = (user as any).id;
+
+    // Eu guardo o código e validade no FirstAccessControl (reaproveitei a entidade pra não criar outra).
     const fac = await strapi
       .documents('api::first-access-control.first-access-control')
-      .findFirst({ filters: { user: { id: (user as any).id } } });
+      .findFirst({ filters: { user: { id: userId as any } } });
 
     if (!fac) return ctx.badRequest('Código inválido ou expirado.');
 
@@ -55,17 +62,19 @@ export default ({ strapi }: { strapi: any }) => ({
     const usedAt = (fac as any).passwordResetUsedAt;
 
     if (!storedCode || !expiresAt || usedAt) return ctx.badRequest('Código inválido ou expirado.');
+
     if (String(storedCode) !== String(data.code)) return ctx.badRequest('Código inválido ou expirado.');
+
     if (isExpired(expiresAt)) return ctx.badRequest('Código inválido ou expirado.');
 
-    // atualiza senha do usuário
+    // Atualiza senha do usuário no plugin users-permissions.
     const userService = strapi.plugin('users-permissions').service('user') as any;
     const updateUser = userService.update?.bind(userService) || userService.edit?.bind(userService);
     if (!updateUser) return ctx.badRequest('Service users-permissions.user não expõe update/edit.');
 
     await updateUser((user as any).id, { password: data.newPassword });
 
-    // invalida o código
+    // Invalida o código para não permitir reuso.
     const facId = String((fac as any).documentId || (fac as any).id);
     await strapi.documents('api::first-access-control.first-access-control').update({
       documentId: facId,
