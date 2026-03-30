@@ -62,6 +62,38 @@
     },
     "passwordResetUsedAt": {
       "type": "datetime"
+    },
+    "passwordResetToken": {
+      "type": "string"
+    },
+    "passwordResetTokenExpiresAt": {
+      "type": "datetime"
+    },
+    "passwordResetValidatedAt": {
+      "type": "datetime"
+    },
+    "passwordResetCodeAttempts": {
+      "type": "integer"
+    },
+    "passwordResetRequestsCount": {
+      "type": "integer"
+    },
+    "passwordResetRequestsWindowStart": {
+      "type": "datetime"
+    },
+    "passwordResetTtlMinutes": {
+      "type": "integer",
+      "default": 10
+    },
+    "passwordResetTokenTtlMinutes": {
+      "type": "integer",
+      "default": 15
+    },
+    "passwordResetUsedAtAudit": {
+      "type": "text"
+    },
+    "passwordResetMisc": {
+      "type": "json"
     }
   }
 }

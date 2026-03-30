@@ -536,9 +536,21 @@ export interface ApiFirstAccessControlFirstAccessControl
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<false>;
     passwordResetCode: Schema.Attribute.String;
+    passwordResetCodeAttempts: Schema.Attribute.Integer;
     passwordResetExpiresAt: Schema.Attribute.DateTime;
+    passwordResetMisc: Schema.Attribute.JSON;
     passwordResetRequestedAt: Schema.Attribute.DateTime;
+    passwordResetRequestsCount: Schema.Attribute.Integer;
+    passwordResetRequestsWindowStart: Schema.Attribute.DateTime;
+    passwordResetToken: Schema.Attribute.String;
+    passwordResetTokenExpiresAt: Schema.Attribute.DateTime;
+    passwordResetTokenTtlMinutes: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<15>;
+    passwordResetTtlMinutes: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<10>;
     passwordResetUsedAt: Schema.Attribute.DateTime;
+    passwordResetUsedAtAudit: Schema.Attribute.Text;
+    passwordResetValidatedAt: Schema.Attribute.DateTime;
     profileCompletedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
     tempPasswordExpiresAt: Schema.Attribute.DateTime;
@@ -568,6 +580,11 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    acceptedAt: Schema.Attribute.DateTime;
+    acceptedTermDocumentId: Schema.Attribute.String;
+    acceptedTerms: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
     arquivadoEm: Schema.Attribute.DateTime;
     arquivadoPor: Schema.Attribute.Relation<
       'manyToOne',
