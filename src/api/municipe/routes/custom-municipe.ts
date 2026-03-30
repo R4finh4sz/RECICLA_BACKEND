@@ -35,7 +35,7 @@ export default {
 
     // Aceite dos termos (obrigatório para liberar acesso).
     {
-      method: 'POST',
+      method: 'PATCH',
       path: '/auth/onboarding/accept-terms',
       handler: 'api::municipe.municipe.onboardingAcceptTerms',
       config: {
@@ -84,9 +84,17 @@ export default {
       config: { auth: false },
     },
 
-    // Efetivar reset de senha (deslogado) usando código.
+    // Validar código recebido por e-mail (deslogado).
     {
       method: 'POST',
+      path: '/auth/password-reset/validate-code',
+      handler: 'api::municipe.municipe.validatePasswordResetCode',
+      config: { auth: false },
+    },
+
+    // Efetivar reset de senha (deslogado) usando token obtido na validação.
+    {
+      method: 'PATCH',
       path: '/auth/reset-password',
       handler: 'api::municipe.municipe.resetPassword',
       config: { auth: false },

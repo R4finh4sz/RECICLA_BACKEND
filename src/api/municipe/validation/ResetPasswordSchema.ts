@@ -6,10 +6,9 @@ import { isStrongPassword, strongPasswordMessage } from '../services/helpers/pas
 
 export const ResetPasswordSchema = z
   .object({
-    email: z.string().email(),
-    code: z.string().min(4).max(12),
+    resetToken: z.string().min(1),
     newPassword: z.string().min(8).refine(isStrongPassword, { message: strongPasswordMessage }),
-    confirmPassword: z.string().min(8)
+    confirmPassword: z.string().min(8),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
     message: 'As senhas não conferem',

@@ -55,6 +55,15 @@ export default factories.createCoreController('api::municipe.municipe', ({ strap
     ctx.body = { data: result, message: 'Se o usuário existir, um e-mail foi enviado com instruções.' };
   },
 
+  // Valida o código enviado por e-mail e gera um resetToken temporário
+  // Entrada: { email, code }
+  // Retorno: { resetToken, expiresAt }
+  async validatePasswordResetCode(ctx) {
+    const result = await strapi.service('api::municipe.validate-password-reset-code').execute(ctx);
+    if (ctx.body) return;
+    ctx.body = { data: result, message: 'Código validado com sucesso.' };
+  },
+
   // Executa rotina de gestão do perfil e dados do municipe.
   async resetPassword(ctx) {
     const result = await strapi.service('api::municipe.reset-password').execute(ctx);
