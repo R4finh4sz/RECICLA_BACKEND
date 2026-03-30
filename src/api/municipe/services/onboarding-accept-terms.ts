@@ -104,6 +104,28 @@ export default ({ strapi }: { strapi: any }) => ({
       },
     });
 
+    // Atualiza o Municipe para expor o boolean
+    try {
+      const municipe = await strapi.documents('api::municipe.municipe').findFirst({
+        filters: { user: { id: userId } },
+        fields: ['documentId']
+      });
+
+      if (municipe) {
+        await strapi.documents('api::municipe.municipe').update({
+          documentId: String((municipe as any).documentId || (municipe as any).id),
+          data: {
+            acceptedTerms: true,
+            acceptedAt,
+            acceptedTermDocumentId: String((termo as any).documentId || (termo as any).id)
+          },
+        });
+      }
+    } catch (e) {
+      // não interrompe o fluxo principal; log para depuração
+      strapi.log.error('Erro ao atualizar municipe.acceptedTerms:', e);
+    }
+
     // 3) Cria o registro no term-list apenas se realmente for novo (evita duplicidade)
     if (!existingAcceptance) {
       const uid = 'api::term-list.term-list' as any; 

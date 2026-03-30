@@ -76,6 +76,21 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "plugin::users-permissions.user"
+    },
+
+    "acceptedTerms": {
+      "type": "boolean",
+      "default": false,
+      "required": true,
+      "description": "Indica se o munícipe aceitou o termo atualmente ativo"
+    },
+    "acceptedTermDocumentId": {
+      "type": "string",
+      "description": "documentId do termo que o usuário aceitou (opcional)"
+    },
+    "acceptedAt": {
+      "type": "datetime",
+      "description": "Timestamp da aceitação (opcional)"
     }
   }
 }
