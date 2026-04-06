@@ -47,31 +47,6 @@
       "type": "string",
       "required": true
     },
-    "statusCadastro": {
-      "type": "enumeration",
-      "enum": ["AGUARDANDO_VALIDACAO", "ATIVO", "ARQUIVADO"],
-      "required": true,
-      "default": "AGUARDANDO_VALIDACAO"
-    },
-    "validadoEm": {
-      "type": "datetime"
-    },
-    "arquivadoEm": {
-      "type": "datetime"
-    },
-    "validadoPor": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
-    },
-    "arquivadoPor": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
-    },
-    "motivoArquivamento": {
-      "type": "text"
-    },
     "user": {
       "type": "relation",
       "relation": "oneToOne",

@@ -123,38 +123,5 @@ export default {
       handler: 'api::municipe.municipe.loginMunicipe',
       config: { auth: false },
     },
-
-    // Admin: lista pendentes.
-    {
-      method: 'GET',
-      path: '/admin/municipes/pending',
-      handler: 'api::municipe.municipe.adminPending',
-      config: {
-        auth: {},
-        policies: ['global::admin-guard'],
-      },
-    },
-
-    // Admin: aprovar cadastro.
-    {
-      method: 'POST',
-      path: '/admin/municipes/:id/approve',
-      handler: 'api::municipe.municipe.adminApprove',
-      config: {
-        auth: {},
-        policies: ['global::admin-guard'],
-      },
-    },
-
-    // Admin: rejeitar/arquivar cadastro.
-    {
-      method: 'POST',
-      path: '/admin/municipes/:id/reject',
-      handler: 'api::municipe.municipe.adminReject',
-      config: {
-        auth: {},
-        policies: ['global::admin-guard'],
-      },
-    },
   ],
 };

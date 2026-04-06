@@ -585,11 +585,6 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     acceptedTerms: Schema.Attribute.Boolean &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<false>;
-    arquivadoEm: Schema.Attribute.DateTime;
-    arquivadoPor: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
     cep: Schema.Attribute.String & Schema.Attribute.Required;
     cidade: Schema.Attribute.String & Schema.Attribute.Required;
     complemento: Schema.Attribute.String;
@@ -608,25 +603,14 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
       'api::municipe.municipe'
     > &
       Schema.Attribute.Private;
-    motivoArquivamento: Schema.Attribute.Text;
     nome: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
-    statusCadastro: Schema.Attribute.Enumeration<
-      ['AGUARDANDO_VALIDACAO', 'ATIVO', 'ARQUIVADO']
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'AGUARDANDO_VALIDACAO'>;
     telefone: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     user: Schema.Attribute.Relation<
       'oneToOne',
-      'plugin::users-permissions.user'
-    >;
-    validadoEm: Schema.Attribute.DateTime;
-    validadoPor: Schema.Attribute.Relation<
-      'manyToOne',
       'plugin::users-permissions.user'
     >;
   };
