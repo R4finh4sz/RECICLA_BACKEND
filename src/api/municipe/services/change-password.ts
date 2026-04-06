@@ -9,6 +9,7 @@ import {
   checkPasswordReuse,
   storePasswordHash,
 } from './helpers/password-history';
+import { deriveSaltFromUser } from './helpers/derive-salt';
 
 // Exporta o handler principal do módulo Municipe.
 export default ({ strapi }: { strapi: any }) => ({
@@ -53,7 +54,18 @@ export default ({ strapi }: { strapi: any }) => ({
       // Se usuário não tem hash, não era para permitir login — segurança
       return ctx.badRequest('Credenciais inválidas.');
     }
-    const contrasenhaOk = await bcrypt.compare(data.currentPassword, hashed);
+
+    // tenta forma antiga (senha pura)
+    let contrasenhaOk = await bcrypt.compare(data.currentPassword, hashed);
+
+    // se não bateu, tenta com derived salt (senha::salt)
+    if (!contrasenhaOk) {
+      const derived = deriveSaltFromUser(user as any);
+      if (derived) {
+        contrasenhaOk = await bcrypt.compare(data.currentPassword + '::' + derived, hashed);
+      }
+    }
+
     // Executa rotina de troca de senha do usuário autenticado.
     if (!contrasenhaOk) {
       // Resposta sempre neutra — NUNCA diz se a senha atual está errada
@@ -85,7 +97,12 @@ export default ({ strapi }: { strapi: any }) => ({
         'Serviço users-permissions.user não expõe update/edit.'
       );
     }
-    await updateUser(userId, { password: data.newPassword });
+
+    // enviar a senha com derived salt (se disponível) para que o Strapi faça o hash normalmente
+    const derivedForNew = deriveSaltFromUser(user as any);
+    const toSavePassword = derivedForNew ? data.newPassword + '::' + derivedForNew : data.newPassword;
+
+    await updateUser(userId, { password: toSavePassword });
 
     // 9. Retorna sucesso: padrão
     return { changed: true };
