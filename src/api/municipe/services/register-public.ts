@@ -65,7 +65,7 @@ export default ({ strapi }: { strapi: any }) => ({
     } catch (err) {
       // Eu retorno uma mensagem genérica porque não quero dar pista de validações internas.
       if (err instanceof ZodError)
-        return ctx.badRequest("Credenciais inválidas.");
+        return ctx.badRequest("Dados inválidos no cadastro.");
       throw err;
     }
 
@@ -81,7 +81,7 @@ export default ({ strapi }: { strapi: any }) => ({
       });
 
     // Resposta neutra por segurança (mesma ideia do login).
-    if (existingUser) return ctx.badRequest("Credenciais inválidas.");
+    if (existingUser) return ctx.badRequest("E-mail já cadastrado.");
 
     // 3) CPF (RN 3.4.2).
     const existingMunicipeByCpf = await strapi
@@ -91,7 +91,7 @@ export default ({ strapi }: { strapi: any }) => ({
         fields: ["id"],
       });
 
-    if (existingMunicipeByCpf) return ctx.badRequest("Credenciais inválidas.");
+    if (existingMunicipeByCpf) return ctx.badRequest("CPF já cadastrado.");
 
     // 4) CEP (RN 3.4.5) - valida se existe de verdade consultando ViaCEP.
     // Eu faço isso no back-end para garantir que o CEP não é só formato válido, mas que ele foi encontrado.
@@ -113,7 +113,7 @@ export default ({ strapi }: { strapi: any }) => ({
     }
 
     const roleId = await getMunicipeRoleId(strapi);
-    if (!roleId) return ctx.badRequest("Credenciais inválidas.");
+    if (!roleId) return ctx.badRequest("Role Municipe não encontrada.");
 
     // 5) Gera código de confirmação (RN: código com validade de 10 min).
     const confirmationCode = generateEmailConfirmationCode();
@@ -129,7 +129,8 @@ export default ({ strapi }: { strapi: any }) => ({
     const createUser =
       userService.create?.bind(userService) ||
       userService.add?.bind(userService);
-    if (!createUser) return ctx.badRequest("Credenciais inválidas.");
+    if (!createUser)
+      return ctx.badRequest("Serviço de criação de usuário indisponível.");
 
     const createdUser = await createUser({
       email,
