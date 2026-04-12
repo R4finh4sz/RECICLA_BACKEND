@@ -39,6 +39,9 @@
     "complemento": {
       "type": "string"
     },
+    "imagemUrl": {
+      "type": "string"
+    },
     "cidade": {
       "type": "string",
       "required": true

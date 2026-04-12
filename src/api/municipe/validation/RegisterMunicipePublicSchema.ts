@@ -50,6 +50,12 @@ function calcAge(birthDate: Date, now = new Date()) {
   return age;
 }
 
+function normalizeOptionalUrl(value: unknown) {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+}
+
 export const RegisterMunicipePublicSchema = z
   .object({
     nome: z
@@ -67,6 +73,10 @@ export const RegisterMunicipePublicSchema = z
     dataNascimento: z.coerce.date(),
     endereco: z.string().min(1),
     complemento: z.string().optional(),
+    imagemUrl: z.preprocess(
+      normalizeOptionalUrl,
+      z.string().url('URL da imagem inválida').optional()
+    ),
     cep: z.string().regex(/^\d{5}-?\d{3}$/, 'CEP inválido'),
     cidade: z.string().min(1),
     estado: z.string().min(1),

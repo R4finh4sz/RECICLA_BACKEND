@@ -127,6 +127,7 @@ export default ({ strapi }: { strapi: any }) => ({
         cep: cepClean,
         endereco: data.endereco,
         complemento: data.complemento || null,
+        imagemUrl: data.imagemUrl || null,
         cidade: data.cidade,
         estado: data.estado,
         statusCadastro: 'AGUARDANDO_VALIDACAO',
