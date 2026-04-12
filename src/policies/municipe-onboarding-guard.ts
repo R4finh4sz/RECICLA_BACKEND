@@ -12,11 +12,11 @@ export default async (policyContext: any, _config: any, { strapi }: any) => {
   const path = ctx.request.path || '';
 
   const allowlist = new Set([
-    'GET /api/auth/onboarding/status',
-    'POST /api/auth/onboarding/accept-terms',
-    'POST /api/auth/first-access',
-    'GET /api/municipes/me',
-    'PUT /api/municipes/me',
+    'GET /auth/onboarding/status',
+    'PATCH /auth/onboarding/accept-terms',
+    'POST /auth/first-access',
+    'GET /municipes/me',
+    'PUT /municipes/me',
   ]);
 
   if (allowlist.has(`${method} ${path}`)) {
