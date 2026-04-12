@@ -7,40 +7,50 @@
 // - envio de código de confirmação por e-mail (10 min)
 // - validação do CEP via integração (RN 3.4.5)
 
-import { ZodError } from 'zod';
-import { RegisterMunicipePublicSchema, type RegisterMunicipePublicInput,} from '../validation/RegisterMunicipePublicSchema';
-import { sendEmail } from './helpers/send-email';
-import { buildEmailConfirmationToken, generateEmailConfirmationCode,} from './helpers/email-confirmation-code';
-import { lookupCepViaCep } from './helpers/cep';
+import { ZodError } from "zod";
+import {
+  RegisterMunicipePublicSchema,
+  type RegisterMunicipePublicInput,
+} from "../validation/RegisterMunicipePublicSchema";
+import { sendEmail } from "./helpers/send-email";
+import {
+  buildEmailConfirmationToken,
+  generateEmailConfirmationCode,
+} from "./helpers/email-confirmation-code";
+import { lookupCepViaCep } from "./helpers/cep";
 
 function normalizeEmail(v: string) {
-  return String(v || '').trim().toLowerCase();
+  return String(v || "")
+    .trim()
+    .toLowerCase();
 }
 
 function normalizeCpf(v: string) {
-  return String(v || '').replace(/\D/g, '');
+  return String(v || "").replace(/\D/g, "");
 }
 
 function normalizeCep(v: string) {
-  return String(v || '').replace(/\D/g, '');
+  return String(v || "").replace(/\D/g, "");
 }
 
 function normalizeTelefone(v: string) {
-  return String(v || '').replace(/\D/g, '');
+  return String(v || "").replace(/\D/g, "");
 }
 
 function toDateOnlyString(d: Date) {
   const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
 async function getMunicipeRoleId(strapi: any) {
-  const role = await strapi.documents('plugin::users-permissions.role').findFirst({
-    filters: { name: 'Municipe' },
-    fields: ['id', 'name'],
-  });
+  const role = await strapi
+    .documents("plugin::users-permissions.role")
+    .findFirst({
+      filters: { name: "Municipe" },
+      fields: ["id", "name"],
+    });
 
   return role ? (role as any).id : null;
 }
@@ -54,7 +64,8 @@ export default ({ strapi }: { strapi: any }) => ({
       data = RegisterMunicipePublicSchema.parse(ctx.request.body || {});
     } catch (err) {
       // Eu retorno uma mensagem genérica porque não quero dar pista de validações internas.
-      if (err instanceof ZodError) return ctx.badRequest('Credenciais inválidas.');
+      if (err instanceof ZodError)
+        return ctx.badRequest("Credenciais inválidas.");
       throw err;
     }
 
@@ -62,21 +73,25 @@ export default ({ strapi }: { strapi: any }) => ({
     const cpf = normalizeCpf(data.cpf);
 
     // 2) e-mail (RN 3.4.11).
-    const existingUser = await strapi.documents('plugin::users-permissions.user').findFirst({
-      filters: { email },
-      fields: ['id'],
-    });
+    const existingUser = await strapi
+      .documents("plugin::users-permissions.user")
+      .findFirst({
+        filters: { email },
+        fields: ["id"],
+      });
 
     // Resposta neutra por segurança (mesma ideia do login).
-    if (existingUser) return ctx.badRequest('Credenciais inválidas.');
+    if (existingUser) return ctx.badRequest("Credenciais inválidas.");
 
     // 3) CPF (RN 3.4.2).
-    const existingMunicipeByCpf = await strapi.documents('api::municipe.municipe').findFirst({
-      filters: { cpf },
-      fields: ['id'],
-    });
+    const existingMunicipeByCpf = await strapi
+      .documents("api::municipe.municipe")
+      .findFirst({
+        filters: { cpf },
+        fields: ["id"],
+      });
 
-    if (existingMunicipeByCpf) return ctx.badRequest('Credenciais inválidas.');
+    if (existingMunicipeByCpf) return ctx.badRequest("Credenciais inválidas.");
 
     // 4) CEP (RN 3.4.5) - valida se existe de verdade consultando ViaCEP.
     // Eu faço isso no back-end para garantir que o CEP não é só formato válido, mas que ele foi encontrado.
@@ -86,28 +101,39 @@ export default ({ strapi }: { strapi: any }) => ({
       const lookup = await lookupCepViaCep(strapi, cepClean);
 
       // Se não encontrou, eu bloqueio o cadastro.
-      if (!lookup) return ctx.badRequest('CEP inválido ou não encontrado.');
+      if (!lookup) return ctx.badRequest("CEP inválido ou não encontrado.");
     } catch (err: any) {
       // Se a API externa estiver fora, eu não consigo validar o CEP; então eu travo o cadastro de forma controlada.
-      strapi.log.warn(`[register-public] erro na integração de CEP: ${String(err?.message || err)}`);
-      return ctx.badRequest('Não foi possível validar o CEP no momento. Tente novamente.');
+      strapi.log.warn(
+        `[register-public] erro na integração de CEP: ${String(err?.message || err)}`,
+      );
+      return ctx.badRequest(
+        "Não foi possível validar o CEP no momento. Tente novamente.",
+      );
     }
 
     const roleId = await getMunicipeRoleId(strapi);
-    if (!roleId) return ctx.badRequest('Credenciais inválidas.');
+    if (!roleId) return ctx.badRequest("Credenciais inválidas.");
 
     // 5) Gera código de confirmação (RN: código com validade de 10 min).
     const confirmationCode = generateEmailConfirmationCode();
-    const confirmationToken = buildEmailConfirmationToken(confirmationCode, Date.now());
+    const confirmationToken = buildEmailConfirmationToken(
+      confirmationCode,
+      Date.now(),
+    );
 
     // 6) Cria usuário no plugin de autenticação.
-    const userService = strapi.plugin('users-permissions').service('user') as any;
-    const createUser = userService.create?.bind(userService) || userService.add?.bind(userService);
-    if (!createUser) return ctx.badRequest('Credenciais inválidas.');
+    const userService = strapi
+      .plugin("users-permissions")
+      .service("user") as any;
+    const createUser =
+      userService.create?.bind(userService) ||
+      userService.add?.bind(userService);
+    if (!createUser) return ctx.badRequest("Credenciais inválidas.");
 
     const createdUser = await createUser({
       email,
-      username: (data.username || email.split('@')[0]).trim(),
+      username: (data.username || email.split("@")[0]).trim(),
       password: data.password,
       role: roleId,
       confirmed: false,
@@ -118,7 +144,7 @@ export default ({ strapi }: { strapi: any }) => ({
     const userId = (createdUser as any).id;
 
     // 7) Cria a entidade municipe com status inicial aguardando validação.
-    await strapi.documents('api::municipe.municipe').create({
+    await strapi.documents("api::municipe.municipe").create({
       data: {
         nome: data.nome,
         cpf,
@@ -126,11 +152,12 @@ export default ({ strapi }: { strapi: any }) => ({
         telefone: normalizeTelefone(data.telefone),
         cep: cepClean,
         endereco: data.endereco,
+        numero: data.numero,
         complemento: data.complemento || null,
         imagemUrl: data.imagemUrl || null,
         cidade: data.cidade,
         estado: data.estado,
-        statusCadastro: 'AGUARDANDO_VALIDACAO',
+        statusCadastro: "AGUARDANDO_VALIDACAO",
         validadoEm: null,
         arquivadoEm: null,
         user: userId,
@@ -144,11 +171,13 @@ export default ({ strapi }: { strapi: any }) => ({
     try {
       await sendEmail(strapi, {
         to: email,
-        subject: 'Recicla Online - Confirmação de e-mail',
+        subject: "Recicla Online - Confirmação de e-mail",
         text: `Seu código de confirmação é: ${confirmationCode}\n\nEle expira em 10 minutos.`,
       });
     } catch (err) {
-      strapi.log.warn(`[register-public] falha ao enviar e-mail de confirmação: ${String(err)}`);
+      strapi.log.warn(
+        `[register-public] falha ao enviar e-mail de confirmação: ${String(err)}`,
+      );
     }
 
     return { created: true };
