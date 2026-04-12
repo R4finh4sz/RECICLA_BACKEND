@@ -10,5 +10,18 @@
     "draftAndPublish": false
   },
   "pluginOptions": {},
-  "attributes": {}
+  "attributes": {
+    "Product_Name": {
+      "type": "string",
+      "maxLength": 30
+    },
+    "Points": {
+      "type": "decimal",
+      "required": true
+    },
+    "Amount_Storage": {
+      "type": "integer",
+      "required": true
+    }
+  }
 }

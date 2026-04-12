@@ -490,6 +490,7 @@ export interface ApiEcoPointEcoPoint extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    Amount_Storage: Schema.Attribute.Integer & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -499,6 +500,11 @@ export interface ApiEcoPointEcoPoint extends Struct.CollectionTypeSchema {
       'api::eco-point.eco-point'
     > &
       Schema.Attribute.Private;
+    Points: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    Product_Name: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 30;
+      }>;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -597,6 +603,7 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     dataNascimento: Schema.Attribute.Date & Schema.Attribute.Required;
     endereco: Schema.Attribute.String & Schema.Attribute.Required;
     estado: Schema.Attribute.String & Schema.Attribute.Required;
+    imagemUrl: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
