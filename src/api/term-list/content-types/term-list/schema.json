@@ -28,7 +28,7 @@
       "type": "string",
       "required": true
     },
-    "contentHash": {
+    "termDocumentId": {
       "type": "string",
       "required": true
     },
