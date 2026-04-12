@@ -44,6 +44,14 @@ export default {
       },
     },
 
+    // Aceite dos termos sem bearer token (autentica por e-mail e senha no body).
+    {
+      method: "PATCH",
+      path: "/auth/onboarding/accept-terms/public",
+      handler: "api::municipe.municipe.onboardingAcceptTermsPublic",
+      config: { auth: false },
+    },
+
     // Perfil do municipe logado.
     {
       method: "GET",

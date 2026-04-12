@@ -2,9 +2,8 @@
 // Depende de: document API do Strapi.
 
 export async function enforceActiveTermAcceptance(strapi: any, fac: any) {
-  
   // Chamando o serviço pelo container do Strapi
-  const termo = await strapi.service('api::termo.get-active-termo').execute();
+  const termo = await strapi.service("api::termo.get-active-termo").execute();
 
   // Se não existe termo ativo, força aceite pendente para Municipe
   if (!termo) {
@@ -13,19 +12,21 @@ export async function enforceActiveTermAcceptance(strapi: any, fac: any) {
   }
 
   const acceptedVersion = (fac as any).termsVersionAccepted ?? null;
-  const acceptedHash = (fac as any).termsContentHashAccepted ?? null;
+  const acceptedTermDocumentId =
+    (fac as any).termsAcceptedTermDocumentId ?? null;
   const mustAcceptTerms = Boolean((fac as any).mustAcceptTerms);
 
   const needsReaccept =
     acceptedVersion !== (termo as any).version ||
-    acceptedHash !== (termo as any).contentHash;
+    acceptedTermDocumentId !==
+      String((termo as any).documentId || (termo as any).id);
 
   // Se termo mudou e não está marcado como pendente, marca como pendente
   if (needsReaccept && !mustAcceptTerms) {
     const facId = String((fac as any).documentId || (fac as any).id);
 
     await strapi
-      .documents('api::first-access-control.first-access-control')
+      .documents("api::first-access-control.first-access-control")
       .update({
         documentId: facId,
         data: {
