@@ -28,6 +28,12 @@ function normalizeTelefone(v: string) {
   return String(v || "").replace(/\D/g, "");
 }
 
+function normalizeOptionalText(v: unknown) {
+  if (v == null) return null;
+  const value = String(v).trim();
+  return value.length > 0 ? value : null;
+}
+
 function toDateOnlyString(d: Date) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -132,8 +138,8 @@ export default ({ strapi }: { strapi: any }) => ({
           cep: cepClean,
           endereco: data.endereco,
           numero: data.numero,
-          complemento: data.complemento || null,
-          imagemUrl: data.imagemUrl || null,
+          complemento: normalizeOptionalText(data.complemento),
+          imagemUrl: normalizeOptionalText(data.imagemUrl),
           cidade: data.cidade,
           estado: data.estado,
           validadoEm: null,
