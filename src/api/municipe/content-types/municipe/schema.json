@@ -36,10 +36,6 @@
       "type": "string",
       "required": true
     },
-    "numero": {
-      "type": "string",
-      "required": true
-    },
     "complemento": {
       "type": "string"
     },

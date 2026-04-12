@@ -563,7 +563,7 @@ export interface ApiFirstAccessControlFirstAccessControl
     tempPasswordIssuedAt: Schema.Attribute.DateTime;
     tempPasswordUsedAt: Schema.Attribute.DateTime;
     termsAcceptedAt: Schema.Attribute.DateTime;
-    termsAcceptedTermDocumentId: Schema.Attribute.String;
+    termsContentHashAccepted: Schema.Attribute.String;
     termsVersionAccepted: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -611,7 +611,6 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     nome: Schema.Attribute.String & Schema.Attribute.Required;
-    numero: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     telefone: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
@@ -671,6 +670,7 @@ export interface ApiTermListTermList extends Struct.CollectionTypeSchema {
   };
   attributes: {
     acceptedAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    contentHash: Schema.Attribute.String & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -681,7 +681,6 @@ export interface ApiTermListTermList extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    termDocumentId: Schema.Attribute.String & Schema.Attribute.Required;
     termo: Schema.Attribute.Relation<'manyToOne', 'api::termo.termo'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &

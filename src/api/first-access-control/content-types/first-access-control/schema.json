@@ -35,7 +35,7 @@
     "termsVersionAccepted": {
       "type": "string"
     },
-    "termsAcceptedTermDocumentId": {
+    "termsContentHashAccepted": {
       "type": "string"
     },
     "mustChangePassword": {
