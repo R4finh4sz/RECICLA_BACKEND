@@ -1,10 +1,21 @@
 // Este arquivo trata a autenticação, segurança de IP, dispositivos confiáveis e o "Manter Conectado".
 
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { ZodError } from 'zod'; 
 import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeLoginSchema';
 import { sendEmail } from './helpers/send-email';
 import { deriveSaltFromUser } from './helpers/derive-salt';
+
+const LOGIN_2FA_TTL_MS = 10 * 60 * 1000;
+
+function generateLoginTwoFactorCode() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+function generateChallengeId() {
+  return crypto.randomUUID();
+}
 
 function addHours(date: Date, hours: number) {
   const d = new Date(date);
@@ -87,88 +98,92 @@ export default ({ strapi }: { strapi: any }) => ({
       return ctx.forbidden('Acesso restrito a Municipes.');
     }
 
-    const userId = user.id;
+    const sec = await getOrCreateAuthSecurity(strapi, user.id);
     const ip = getClientIp(ctx);
     const userAgent = getUserAgent(ctx);
-    const now = new Date();
-
-    // Lógica de auditoria e segurança (AuthSecurity).
-    const sec = await getOrCreateAuthSecurity(strapi, userId);
-
-    // Registro de dispositivo confiável.
+    const nowDate = new Date();
     const existingDevice = await strapi.documents('api::trusted-device.trusted-device').findFirst({
       filters: {
-        user: { id: userId as any },
+        user: { id: user.id as any },
         ip,
         userAgent,
       },
     });
 
-    if (!existingDevice) {
-      await strapi.documents('api::trusted-device.trusted-device').create({
+    const skipUntilRaw = (existingDevice as any)?.twoFactorSkipUntil;
+    const skipUntilMs = skipUntilRaw ? new Date(skipUntilRaw).getTime() : NaN;
+    const canSkipTwoFactor = Number.isFinite(skipUntilMs) && Date.now() <= skipUntilMs;
+
+    if (canSkipTwoFactor) {
+      const rememberJwt = Boolean(rememberMe);
+      const hours = rememberJwt ? 720 : 24;
+      const expiresIn = rememberJwt ? '30d' : '1d';
+      const tokenExpiresAt = addHours(nowDate, hours);
+
+      const jwtService = strapi.plugin('users-permissions').service('jwt');
+      const token = jwtService.issue({ id: user.id }, { expiresIn });
+
+      await strapi.documents('api::auth-security.auth-security').update({
+        documentId: String((sec as any).documentId || (sec as any).id),
         data: {
-          user: userId,
-          ip,
-          userAgent,
-          firstSeenAt: now,
-          lastSeenAt: now,
-          timesSeen: 1,
+          lastLoginAt: nowDate,
+          loginTwoFactorChallengeId: null,
+          loginTwoFactorCode: null,
+          loginTwoFactorExpiresAt: null,
+          loginTwoFactorRememberMe: false,
         },
       });
-    } else {
+
       await strapi.documents('api::trusted-device.trusted-device').update({
-        documentId: (existingDevice as any).documentId || (existingDevice as any).id,
+        documentId: String((existingDevice as any).documentId || (existingDevice as any).id),
         data: {
-          lastSeenAt: now,
+          lastSeenAt: nowDate,
           timesSeen: Number((existingDevice as any).timesSeen || 1) + 1,
         },
       });
+
+      return {
+        requiresTwoFactor: false,
+        twoFactorBypassed: true,
+        jwt: token,
+        user: {
+          id: user.id,
+          documentId: (user as any).documentId,
+          username: user.username,
+          email: user.email,
+        },
+        rememberMe: rememberJwt,
+        expiresAt: tokenExpiresAt.toISOString(),
+      };
     }
 
-    // Alerta de novo IP.
-    if ((sec as any).lastLoginIp && String((sec as any).lastLoginIp) !== String(ip)) {
-      await sendEmail(strapi, {
-        to: email,
-        subject: 'Recicla+ - Novo acesso à sua conta',
-        text:
-          `Detectamos um novo acesso em sua conta.\n\n` +
-          `Data/Hora: ${now.toISOString()}\n` +
-          `IP: ${ip}\n` +
-          `User-Agent: ${userAgent}\n\n` +
-          `Se não foi você, altere sua senha imediatamente.`,
-      });
-    }
+    const userId = user.id;
+    const now = Date.now();
+    const code = generateLoginTwoFactorCode();
+    const challengeId = generateChallengeId();
+    const expiresAt = new Date(now + LOGIN_2FA_TTL_MS);
 
-    // --- Lógica de Manter Conectado ---
-    // Calculamos o tempo de expiração: 30 dias se marcar rememberMe, se não 1 dia.
-    const hours = rememberMe ? 720 : 24;
-    const expiresIn = rememberMe ? '30d' : '1d';
-    const expiresAt = addHours(now, hours);
-
-    // Persistência dos dados de expiração para auditoria no banco.
     await strapi.documents('api::auth-security.auth-security').update({
-      documentId: (sec as any).documentId,
+      documentId: String((sec as any).documentId || (sec as any).id),
       data: {
-        lastLoginAt: now,
-        lastLoginIp: ip,
-        tokenExpiresAt: expiresAt, 
+        loginTwoFactorChallengeId: challengeId,
+        loginTwoFactorCode: code,
+        loginTwoFactorExpiresAt: expiresAt.toISOString(),
+        loginTwoFactorRememberMe: Boolean(rememberMe),
       },
     });
 
-    // Emissão do token JWT customizado.
-    const jwtService = strapi.plugin('users-permissions').service('jwt');
-    const token = jwtService.issue({ id: userId }, { expiresIn });
+    await sendEmail(strapi, {
+      to: email,
+      subject: 'Recicla+ - Codigo de verificacao de login',
+      text: `Seu codigo de login e: ${code}\n\nEle expira em 10 minutos.`,
+    });
 
     return {
-      jwt: token,
-      user: {
-        id: user.id,
-        documentId: user.documentId,
-        username: user.username,
-        email: user.email,
-      },
-      rememberMe,
-      expiresAt: expiresAt.toISOString()
+      requiresTwoFactor: true,
+      challengeId,
+      expiresAt: expiresAt.toISOString(),
+      rememberMe: Boolean(rememberMe),
     };
   },
 });

@@ -19,6 +19,7 @@
     "userAgent": { "type": "text", "required": true },
     "firstSeenAt": { "type": "datetime", "required": true },
     "lastSeenAt": { "type": "datetime", "required": true },
-    "timesSeen": { "type": "integer", "default": 1 }
+    "timesSeen": { "type": "integer", "default": 1 },
+    "twoFactorSkipUntil": { "type": "datetime" }
   }
 }

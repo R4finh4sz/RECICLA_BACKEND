@@ -29,6 +29,11 @@
     "emailConfirmationResendWindowStart": { "type": "datetime" },
     "emailConfirmationLastSentAt": { "type": "datetime" },
 
+    "loginTwoFactorChallengeId": { "type": "string" },
+    "loginTwoFactorCode": { "type": "string" },
+    "loginTwoFactorExpiresAt": { "type": "datetime" },
+    "loginTwoFactorRememberMe": { "type": "boolean", "default": false },
+
     "lastLoginAt": { "type": "datetime" },
     "lastLoginIp": { "type": "string" },
     "lastLoginUserAgent": { "type": "text" }

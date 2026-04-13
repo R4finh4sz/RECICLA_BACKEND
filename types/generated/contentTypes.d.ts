@@ -464,6 +464,11 @@ export interface ApiAuthSecurityAuthSecurity
     > &
       Schema.Attribute.Private;
     loginBlockedUntil: Schema.Attribute.DateTime;
+    loginTwoFactorChallengeId: Schema.Attribute.String;
+    loginTwoFactorCode: Schema.Attribute.String;
+    loginTwoFactorExpiresAt: Schema.Attribute.DateTime;
+    loginTwoFactorRememberMe: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     passwordResetRequestsCount: Schema.Attribute.Integer &
       Schema.Attribute.DefaultTo<0>;
     passwordResetRequestsWindowStart: Schema.Attribute.DateTime;
@@ -754,6 +759,7 @@ export interface ApiTrustedDeviceTrustedDevice
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     timesSeen: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
+    twoFactorSkipUntil: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

@@ -137,7 +137,25 @@ export default factories.createCoreController(
         .service("api::municipe.municipe-login")
         .execute(ctx);
       if (ctx.body) return;
+      ctx.body = { data: result, message: "Codigo de verificacao enviado para o e-mail." };
+    },
+
+    // Verifica codigo de 2FA e emite JWT.
+    async verifyLoginTwoFactor(ctx) {
+      const result = await strapi
+        .service("api::municipe.verify-login-2fa")
+        .execute(ctx);
+      if (ctx.body) return;
       ctx.body = { data: result, message: "Login realizado com sucesso!" };
+    },
+
+    // Reenvia codigo de 2FA durante o login.
+    async resendLoginTwoFactorCode(ctx) {
+      const result = await strapi
+        .service("api::municipe.resend-login-2fa-code")
+        .execute(ctx);
+      if (ctx.body) return;
+      ctx.body = { data: result, message: "Se a sessao existir, um novo codigo foi enviado." };
     },
 
     // Lista municipes pendentes de validação (admin).

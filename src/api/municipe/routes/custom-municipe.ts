@@ -131,5 +131,21 @@ export default {
       handler: "api::municipe.municipe.loginMunicipe",
       config: { auth: false },
     },
+
+    // Verificacao do codigo 2FA para concluir login.
+    {
+      method: "POST",
+      path: "/auth/municipe/login/verify-code",
+      handler: "api::municipe.municipe.verifyLoginTwoFactor",
+      config: { auth: false },
+    },
+
+    // Reenvio do codigo 2FA durante login.
+    {
+      method: "POST",
+      path: "/auth/municipe/login/resend-code",
+      handler: "api::municipe.municipe.resendLoginTwoFactorCode",
+      config: { auth: false },
+    },
   ],
 };
