@@ -22,14 +22,13 @@ export class BruteForceService implements IBruteForceService {
 
     const attempts = await this.getAttempts(identifier);
     const newCount = (attempts?.count || 0) + 1;
-    
+
     await this.updateAttempts(identifier, newCount);
 
     if (newCount >= this.maxAttempts) {
       return { blocked: true, delayMs: 0 };
     }
 
-    // Atraso progressivo nas falhas (ex: 500ms * número de falhas)
     return { blocked: false, delayMs: newCount * 500 };
   }
 

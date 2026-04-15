@@ -4,7 +4,7 @@ import { TokenRevocationService } from '../../services/token-revocation.service'
 export default (plugin: Core.Plugin) => {
   const revocationService = new TokenRevocationService(strapi);
 
-  plugin.controllers.auth.logout = async (ctx) => {
+  plugin.controllers.auth.logout = async (ctx, next) => {
     const authHeader = ctx.request.header.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -24,8 +24,8 @@ export default (plugin: Core.Plugin) => {
     });
   };
   const originalMe = plugin.controllers.user.me;
-  plugin.controllers.user.me = async (ctx) => {
-    await originalMe(ctx);
+  plugin.controllers.user.me = async (ctx, next) => {
+    await originalMe(ctx, next);
 
     const user = ctx.body as any;
     if (user && user.id) {
