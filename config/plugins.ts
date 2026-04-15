@@ -7,6 +7,13 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
   const port = env.int('SMTP_PORT', 587);
 
   return {
+    'users-permissions': {
+      config: {
+        jwt: {
+          expiresIn: env('JWT_EXPIRES_IN', '2h'),
+        },
+      },
+    },
     email: {
       config: {
         provider: 'nodemailer',

@@ -9,6 +9,8 @@ const config: Core.Config.Middlewares = [
   'strapi::poweredBy',
   'strapi::query',
   'strapi::body',
+  'global::brute-force-protection',
+  'global::auth-checker',
   'strapi::session',
   'strapi::favicon',
   'strapi::public',

@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "brute_force_attempts",
+  "info": {
+    "singularName": "brute-force-attempt",
+    "pluralName": "brute-force-attempts",
+    "displayName": "Brute Force Attempt",
+    "description": "Track failed login attempts"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "identifier": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "count": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

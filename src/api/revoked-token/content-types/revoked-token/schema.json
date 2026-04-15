@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "revoked_tokens",
+  "info": {
+    "singularName": "revoked-token",
+    "pluralName": "revoked-tokens",
+    "displayName": "Revoked Token",
+    "description": "Store invalidated JWT tokens"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "token": {
+      "type": "text",
+      "required": true,
+      "unique": true
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}
