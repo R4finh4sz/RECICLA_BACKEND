@@ -6,6 +6,7 @@ import { ZodError } from 'zod';
 import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeLoginSchema';
 import { sendEmail } from './helpers/send-email';
 import { deriveSaltFromUser } from './helpers/derive-salt';
+import { BruteForceService } from '../../../services/brute-force.service';
 
 const LOGIN_2FA_TTL_MS = 10 * 60 * 1000;
 
@@ -62,6 +63,12 @@ export default ({ strapi }: { strapi: any }) => ({
     }
 
     const { email, password, rememberMe } = data;
+    const bruteForceService = new BruteForceService(strapi);
+
+    // 1. Verificar se o identificador (email) está bloqueado
+    if (await bruteForceService.isBlocked(email)) {
+      return ctx.tooManyRequests('Sua conta está temporariamente bloqueada devido a muitas tentativas falhas. Tente novamente em 15 minutos.');
+    }
 
     // Busca o usuário no plugin nativo do Strapi.
     const user = await strapi.db.query('plugin::users-permissions.user').findOne({
@@ -70,15 +77,14 @@ export default ({ strapi }: { strapi: any }) => ({
     });
 
     if (!user || !user.password) {
+      await bruteForceService.recordAttempt(email, false);
       return ctx.badRequest('E-mail ou senha inválidos.');
     }
 
     // Compara o hash da senha.
-    // Tenta forma antiga (senha pura) e, se disponível, forma com salt derivado (senha::salt)
     let validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
-      // obter campos do usuário necessários para derivar o salt (se existirem)
       const userDoc = await strapi.documents('plugin::users-permissions.user').findFirst({
         filters: { id: user.id as any },
         fields: ['id','email','username','firstName','lastName','name','sobrenome']
@@ -89,7 +95,14 @@ export default ({ strapi }: { strapi: any }) => ({
       }
     }
 
+    // 2. Registrar o resultado da tentativa de senha
+    const attempt = await bruteForceService.recordAttempt(email, validPassword);
+
     if (!validPassword) {
+      // Se houver delay progressivo configurado no serviço, o App sentirá a demora
+      if (attempt.delayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, attempt.delayMs));
+      }
       return ctx.badRequest('E-mail ou senha inválidos.');
     }
 
