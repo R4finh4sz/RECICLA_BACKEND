@@ -12,7 +12,6 @@ function stripHtml(html: string) {
 export default ({ strapi }: { strapi: any }) => ({
   async execute(ctx: any) {
     const termo = await strapi.documents('api::termo.termo').findFirst({
-      filters: { active: { $eq: true } },
       sort: { updatedAt: 'desc' },
     });
 
@@ -20,7 +19,6 @@ export default ({ strapi }: { strapi: any }) => ({
       return ctx.notFound('Nenhum termo ativo encontrado.');
     }
 
-    const version = String((termo as any).version || 'termo');
     const title = String((termo as any).title || 'Termos de Uso');
     const updatedAt = String((termo as any).updatedAt || '');
     const content = stripHtml(String((termo as any).content || ''));
@@ -34,7 +32,6 @@ export default ({ strapi }: { strapi: any }) => ({
 
     doc.fontSize(18).text(title, { align: 'center' });
     doc.moveDown(0.5);
-    doc.fontSize(10).text(`Versão: ${version}`, { align: 'center' });
     doc.fontSize(10).text(`Última atualização: ${updatedAt}`, { align: 'center' });
     doc.moveDown(1);
     doc.fontSize(12).text(content, { align: 'left' });
@@ -43,7 +40,7 @@ export default ({ strapi }: { strapi: any }) => ({
     const pdfBuffer = await endPromise;
 
     ctx.set('Content-Type', 'application/pdf');
-    ctx.set('Content-Disposition', `attachment; filename="termos_${version}.pdf"`);
+    ctx.set('Content-Disposition', `attachment; filename="termos_recicla.pdf"`);
     ctx.body = pdfBuffer;
   },
 });

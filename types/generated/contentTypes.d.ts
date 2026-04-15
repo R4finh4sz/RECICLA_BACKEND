@@ -484,6 +484,39 @@ export interface ApiAuthSecurityAuthSecurity
   };
 }
 
+export interface ApiBruteForceAttemptBruteForceAttempt
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'brute_force_attempts';
+  info: {
+    description: 'Track failed login attempts';
+    displayName: 'Brute Force Attempt';
+    pluralName: 'brute-force-attempts';
+    singularName: 'brute-force-attempt';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    count: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    identifier: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::brute-force-attempt.brute-force-attempt'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiEcoPointEcoPoint extends Struct.CollectionTypeSchema {
   collectionName: 'eco_points';
   info: {
@@ -663,6 +696,39 @@ export interface ApiPasswordHistoryPasswordHistory
   };
 }
 
+export interface ApiRevokedTokenRevokedToken
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'revoked_tokens';
+  info: {
+    description: 'Store invalidated JWT tokens';
+    displayName: 'Revoked Token';
+    pluralName: 'revoked-tokens';
+    singularName: 'revoked-token';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::revoked-token.revoked-token'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    token: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiTermListTermList extends Struct.CollectionTypeSchema {
   collectionName: 'term_lists';
   info: {
@@ -711,11 +777,7 @@ export interface ApiTermoTermo extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
-    active: Schema.Attribute.Boolean &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<false>;
     content: Schema.Attribute.RichText & Schema.Attribute.Required;
-    contentHash: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -727,9 +789,6 @@ export interface ApiTermoTermo extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    version: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
   };
 }
 
@@ -1283,10 +1342,12 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::auth-security.auth-security': ApiAuthSecurityAuthSecurity;
+      'api::brute-force-attempt.brute-force-attempt': ApiBruteForceAttemptBruteForceAttempt;
       'api::eco-point.eco-point': ApiEcoPointEcoPoint;
       'api::first-access-control.first-access-control': ApiFirstAccessControlFirstAccessControl;
       'api::municipe.municipe': ApiMunicipeMunicipe;
       'api::password-history.password-history': ApiPasswordHistoryPasswordHistory;
+      'api::revoked-token.revoked-token': ApiRevokedTokenRevokedToken;
       'api::term-list.term-list': ApiTermListTermList;
       'api::termo.termo': ApiTermoTermo;
       'api::trusted-device.trusted-device': ApiTrustedDeviceTrustedDevice;

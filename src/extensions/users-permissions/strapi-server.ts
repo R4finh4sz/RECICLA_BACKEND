@@ -4,7 +4,6 @@ import { TokenRevocationService } from '../../services/token-revocation.service'
 export default (plugin: Core.Plugin) => {
   const revocationService = new TokenRevocationService(strapi);
 
-  // Adicionar controlador de logout
   plugin.controllers.auth.logout = async (ctx) => {
     const authHeader = ctx.request.header.authorization;
 
@@ -14,8 +13,7 @@ export default (plugin: Core.Plugin) => {
 
     const token = authHeader.split(' ')[1];
 
-    // Aqui poderíamos decodificar o token para pegar a data de expiração real
-    // Mas por simplicidade, definimos uma expiração de 2 dias na blacklist
+
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 2);
 
@@ -25,8 +23,21 @@ export default (plugin: Core.Plugin) => {
       message: 'Successfully logged out and token invalidated',
     });
   };
+  const originalMe = plugin.controllers.user.me;
+  plugin.controllers.user.me = async (ctx) => {
+    await originalMe(ctx);
 
-  // Adicionar rota de logout
+    const user = ctx.body as any;
+    if (user && user.id) {
+      const municipe = await strapi.documents('api::municipe.municipe').findFirst({
+        filters: { user: { id: user.id } },
+        fields: ['acceptedTerms']
+      }) as any;
+
+      user.acceptedTerms = municipe ? !!municipe.acceptedTerms : false;
+    }
+  };
+
   plugin.routes['content-api'].routes.push({
     method: 'POST',
     path: '/auth/logout',

@@ -12,28 +12,12 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "version": {
-      "type": "string",
-      "required": true,
-      "unique": true
-    },
     "title": {
       "type": "string",
       "required": true
     },
     "content": {
       "type": "richtext",
-      "required": true
-    },
-    "contentHash": {
-      "type": "string",
-      "configurable": false,
-      "writable": true,
-      "private": false
-    },
-    "active": {
-      "type": "boolean",
-      "default": false,
       "required": true
     }
   }
