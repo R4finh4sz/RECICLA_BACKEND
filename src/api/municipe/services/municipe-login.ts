@@ -86,8 +86,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
     if (!validPassword) {
       const userDoc = await strapi.documents('plugin::users-permissions.user').findFirst({
-        filters: { id: user.id as any },
-        fields: ['id','email','username','firstName','lastName','name','sobrenome']
+        filters: { id: user.id as any }
       });
       const derived = deriveSaltFromUser(userDoc);
       if (derived) {
