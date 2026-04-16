@@ -43,8 +43,8 @@ export default ({ strapi }: { strapi: any }) => ({
       populate: ['role'],
     });
 
-    if (!user || user.role?.name !== 'Municipe') {
-      return ctx.badRequest('Codigo invalido ou expirado.');
+    if (!user) {
+      return ctx.badRequest('Usuário não encontrado.');
     }
 
     const security = await strapi.documents('api::auth-security.auth-security').findFirst({
@@ -143,6 +143,11 @@ export default ({ strapi }: { strapi: any }) => ({
         documentId: (user as any).documentId,
         username: user.username,
         email: user.email,
+        role: user.role ? {
+          id: user.role.id,
+          name: user.role.name,
+          type: user.role.type,
+        } : null,
       },
       twoFactorSkippedUntil: rememberDeviceToday ? endOfToday(now).toISOString() : null,
       rememberMe,

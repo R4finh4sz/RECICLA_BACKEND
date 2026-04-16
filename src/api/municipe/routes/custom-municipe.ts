@@ -127,7 +127,7 @@ export default {
     // Login do municipe (deslogado).
     {
       method: "POST",
-      path: "/auth/municipe/login",
+      path: "/auth/local",
       handler: "api::municipe.municipe.loginMunicipe",
       config: { auth: false },
     },
@@ -135,7 +135,7 @@ export default {
     // Verificacao do codigo 2FA para concluir login.
     {
       method: "POST",
-      path: "/auth/municipe/login/verify-code",
+      path: "/auth/local/verify-code",
       handler: "api::municipe.municipe.verifyLoginTwoFactor",
       config: { auth: false },
     },
@@ -143,7 +143,7 @@ export default {
     // Reenvio do codigo 2FA durante login.
     {
       method: "POST",
-      path: "/auth/municipe/login/resend-code",
+      path: "/auth/local/resend-code",
       handler: "api::municipe.municipe.resendLoginTwoFactorCode",
       config: { auth: false },
     },

@@ -32,8 +32,8 @@ const config = ({
     (databaseUrl ? hasSslQueryParam(databaseUrl) : false);
   const ssl = sslEnabled
     ? {
-        rejectUnauthorized: env.bool("DATABASE_SSL_REJECT_UNAUTHORIZED", false),
-      }
+      rejectUnauthorized: env.bool("DATABASE_SSL_REJECT_UNAUTHORIZED", false),
+    }
     : false;
 
   return {
@@ -48,8 +48,8 @@ const config = ({
         schema: env("DATABASE_SCHEMA", "public"),
         ...(databaseUrl
           ? {
-              connectionString: stripSslQueryParams(databaseUrl),
-            }
+            connectionString: stripSslQueryParams(databaseUrl),
+          }
           : {}),
         ssl,
       },

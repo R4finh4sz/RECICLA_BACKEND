@@ -3,12 +3,6 @@ import {
   RegisterMunicipePublicSchema,
   type RegisterMunicipePublicInput,
 } from "../validation/RegisterMunicipePublicSchema";
-import { sendEmail } from "./helpers/send-email";
-import {
-  buildEmailConfirmationToken,
-  generateEmailConfirmationCode,
-} from "./helpers/email-confirmation-code";
-import { lookupCepViaCep } from "./helpers/cep";
 
 function normalizeEmail(v: string) {
   return String(v || "")
@@ -80,26 +74,9 @@ export default ({ strapi }: { strapi: any }) => ({
     if (existingMunicipeByCpf) return ctx.badRequest("CPF já cadastrado.");
     const cepClean = normalizeCep(data.cep);
 
-    try {
-      const lookup = await lookupCepViaCep(strapi, cepClean);
-
-      if (!lookup) return ctx.badRequest("CEP inválido ou não encontrado.");
-    } catch (err: any) {
-      strapi.log.warn(
-        `[register-public] erro na integração de CEP: ${String(err?.message || err)}`,
-      );
-      return ctx.badRequest(
-        "Não foi possível validar o CEP no momento. Tente novamente.",
-      );
-    }
 
     const roleId = await getMunicipeRoleId(strapi);
     if (!roleId) return ctx.badRequest("Role Municipe não encontrada.");
-    const confirmationCode = generateEmailConfirmationCode();
-    const confirmationToken = buildEmailConfirmationToken(
-      confirmationCode,
-      Date.now(),
-    );
 
     const userService = strapi
       .plugin("users-permissions")
@@ -115,9 +92,8 @@ export default ({ strapi }: { strapi: any }) => ({
       username: (data.username || email.split("@")[0]).trim(),
       password: data.password,
       role: roleId,
-      confirmed: false,
+      confirmed: true,
       blocked: false,
-      confirmationToken,
     });
 
     const userId = (createdUser as any).id;
@@ -151,17 +127,6 @@ export default ({ strapi }: { strapi: any }) => ({
       );
     }
 
-    try {
-      await sendEmail(strapi, {
-        to: email,
-        subject: "Recicla Online - Confirmação de e-mail",
-        text: `Seu código de confirmação é: ${confirmationCode}\n\nEle expira em 10 minutos.`,
-      });
-    } catch (err) {
-      strapi.log.warn(
-        `[register-public] falha ao enviar e-mail de confirmação: ${String(err)}`,
-      );
-    }
 
     return { created: true };
   },

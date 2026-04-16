@@ -1,7 +1,3 @@
-// Service do endpoint GET (RN 3.4.5).
-// Eu retorno endereço/cidade/estado via ViaCEP. Se o CEP não existe, eu retorno 404.
-// Se a API externa estiver fora, eu retorno 400 com mensagem simples (para não travar o cadastro).
-
 import { lookupCepViaCep } from './helpers/cep';
 
 export default ({ strapi }: { strapi: any }) => ({

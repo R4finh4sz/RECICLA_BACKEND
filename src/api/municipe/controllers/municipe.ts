@@ -16,7 +16,7 @@ export default factories.createCoreController(
       ctx.body = {
         data: result,
         message:
-          "Cadastro realizado com sucesso. Confirme seu e-mail para acessar.",
+          "Cadastro realizado com sucesso! Você já pode acessar sua conta.",
       };
     },
 

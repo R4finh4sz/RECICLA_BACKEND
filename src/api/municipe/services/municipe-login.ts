@@ -2,7 +2,7 @@
 
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
-import { ZodError } from 'zod'; 
+import { ZodError } from 'zod';
 import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeLoginSchema';
 import { sendEmail } from './helpers/send-email';
 import { deriveSaltFromUser } from './helpers/derive-salt';
@@ -98,17 +98,12 @@ export default ({ strapi }: { strapi: any }) => ({
     const attempt = await bruteForceService.recordAttempt(email, validPassword);
 
     if (!validPassword) {
-      // Se houver delay progressivo configurado no serviço, o App sentirá a demora
       if (attempt.delayMs > 0) {
         await new Promise(resolve => setTimeout(resolve, attempt.delayMs));
       }
       return ctx.badRequest('E-mail ou senha inválidos.');
     }
 
-    // Garante que apenas usuários com a Role "Municipe" acessem esta rota.
-    if (user.role?.name !== 'Municipe') {
-      return ctx.forbidden('Acesso restrito a Municipes.');
-    }
 
     const sec = await getOrCreateAuthSecurity(strapi, user.id);
     const ip = getClientIp(ctx);
@@ -163,6 +158,11 @@ export default ({ strapi }: { strapi: any }) => ({
           documentId: (user as any).documentId,
           username: user.username,
           email: user.email,
+          role: user.role ? {
+            id: user.role.id,
+            name: user.role.name,
+            type: user.role.type,
+          } : null,
         },
         rememberMe: rememberJwt,
         expiresAt: tokenExpiresAt.toISOString(),
@@ -196,6 +196,11 @@ export default ({ strapi }: { strapi: any }) => ({
       challengeId,
       expiresAt: expiresAt.toISOString(),
       rememberMe: Boolean(rememberMe),
+      user: {
+        role: user.role ? {
+          id: user.role.id,
+        } : null,
+      },
     };
   },
 });

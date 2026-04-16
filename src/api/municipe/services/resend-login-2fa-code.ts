@@ -26,8 +26,6 @@ export default ({ strapi }: { strapi: any }) => ({
     });
 
     if (!user) return { sent: true };
-    const roleName = (user as any).role?.name || (user as any).role;
-    if (roleName !== 'Municipe') return { sent: true };
 
     const security = await strapi.documents('api::auth-security.auth-security').findFirst({
       filters: { user: { id: (user as any).id } },
