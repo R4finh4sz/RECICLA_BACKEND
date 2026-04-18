@@ -30,12 +30,21 @@ function toDateOnlyString(d: Date) {
 }
 
 async function getMunicipeRoleId(strapi: any) {
-  const role = await strapi
+  let role = await strapi
     .documents("plugin::users-permissions.role")
     .findFirst({
       filters: { name: "Municipe" },
       fields: ["id", "name"],
     });
+
+  if (!role) {
+    role = await strapi.documents("plugin::users-permissions.role").create({
+      data: {
+        name: "Municipe",
+        description: "Rolefor Municipe users",
+      },
+    });
+  }
 
   return role ? (role as any).id : null;
 }
@@ -73,7 +82,6 @@ export default ({ strapi }: { strapi: any }) => ({
 
     if (existingMunicipeByCpf) return ctx.badRequest("CPF já cadastrado.");
     const cepClean = normalizeCep(data.cep);
-
 
     const roleId = await getMunicipeRoleId(strapi);
     if (!roleId) return ctx.badRequest("Role Municipe não encontrada.");
@@ -114,8 +122,7 @@ export default ({ strapi }: { strapi: any }) => ({
           estado: data.estado,
           validadoEm: null,
           arquivadoEm: null,
-          user: userId,
-          __createdByMasterFlow: true,
+          _newUserId: userId,
         },
       });
     } catch (err: any) {
@@ -126,7 +133,6 @@ export default ({ strapi }: { strapi: any }) => ({
         `Falha ao criar municipe.${column} ${detail}`.trim(),
       );
     }
-
 
     return { created: true };
   },

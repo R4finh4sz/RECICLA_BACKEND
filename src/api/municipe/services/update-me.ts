@@ -1,9 +1,17 @@
 import { getUserRoleName } from './helpers/get-user-role-name';
 import { pickAllowedMunicipeUpdate } from './helpers/pick-allowed-municipe-update';
 
+interface AuthUser {
+  id: number | string;
+  username: string;
+  email: string;
+}
+
 export default ({ strapi }: { strapi: any }) => ({
   async execute(ctx: any) {
-    const userId = ctx?.state?.user?.id;
+    const user = ctx?.state?.user as AuthUser | undefined;
+    const userId = user?.id;
+
     if (!userId) return ctx.unauthorized('Token inválido ou ausente.');
 
     const roleName = getUserRoleName(ctx);
@@ -15,12 +23,18 @@ export default ({ strapi }: { strapi: any }) => ({
     if (ctx?.request?.body?.user !== undefined) return ctx.badRequest('Não é permitido alterar o vínculo de usuário.');
     if (ctx?.request?.body?.dataNascimento !== undefined) return ctx.badRequest('Não é permitido alterar a data de nascimento.');
 
+    const { id } = ctx.params;
+    if (!id) return ctx.badRequest('ID do perfil não fornecido.');
+
     const municipe = await strapi.documents('api::municipe.municipe').findFirst({
-      filters: { user: { id: userId as any } },
+      filters: {
+        documentId: id,
+        user: { id: userId }
+      },
       fields: ['id', 'documentId', 'statusCadastro'],
     });
 
-    if (!municipe) return ctx.notFound('Municipe não encontrado.');
+    if (!municipe) return ctx.notFound('Perfil não encontrado ou você não tem permissão para editá-lo.');
 
     const statusCadastro = String((municipe as any).statusCadastro || '');
     if (statusCadastro === 'AGUARDANDO_VALIDACAO') {

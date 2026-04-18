@@ -51,17 +51,32 @@ export default (plugin: Core.Plugin) => {
 
     const user = ctx.body as any;
     if (user && user.id) {
+      // Busca o municipe vinculado ao usuário com todos os campos necessários
       const municipe = await strapi.documents('api::municipe.municipe').findFirst({
         filters: { user: { id: user.id } },
-        fields: ['acceptedTerms']
+        fields: [
+          'nome', 'cpf', 'dataNascimento', 'telefone', 'cep', 
+          'endereco', 'numero', 'complemento', 'imagemUrl', 
+          'cidade', 'estado', 'acceptedTerms'
+        ]
       }) as any;
 
-      user.acceptedTerms = municipe ? !!municipe.acceptedTerms : false;
+      if (municipe) {
+        // Unifica os dados do municipe no corpo da resposta do perfil
+        user.profile = {
+          ...municipe,
+          acceptedTerms: !!municipe.acceptedTerms
+        };
+        // Remove o ID do documento interno do municipe para não expor estrutura do Strapi desnecessariamente
+        delete user.profile.id;
+        delete user.profile.documentId;
+      }
 
       const userWithRole = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: user.id },
         populate: ['role'],
       });
+
       if (userWithRole && userWithRole.role) {
         user.role = {
           id: userWithRole.role.id,
