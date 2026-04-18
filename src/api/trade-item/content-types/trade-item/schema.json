@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "trade_items",
+  "info": {
+    "singularName": "trade-item",
+    "pluralName": "trade-items",
+    "displayName": "Trade Item"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string"
+    },
+    "Description": {
+      "type": "string"
+    },
+    "Value": {
+      "type": "decimal"
+    }
+  }
+}

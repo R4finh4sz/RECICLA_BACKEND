@@ -12,7 +12,6 @@ export default {
       path: "/auth/onboarding/status",
       handler: "api::municipe.municipe.onboardingStatus",
       config: {
-        auth: {},
         policies: ["global::municipe-onboarding-guard"],
       },
     },
@@ -22,7 +21,6 @@ export default {
       path: "/auth/onboarding/accept-terms",
       handler: "api::municipe.municipe.onboardingAcceptTerms",
       config: {
-        auth: {},
         policies: ["global::municipe-onboarding-guard"],
       },
     },
@@ -38,7 +36,6 @@ export default {
       path: "/edit-profile/:id",
       handler: "api::municipe.municipe.updateMe",
       config: {
-        auth: {},
         policies: ["global::municipe-onboarding-guard"],
       },
     },
@@ -46,9 +43,7 @@ export default {
       method: "POST",
       path: "/auth/change-password",
       handler: "api::municipe.municipe.changePassword",
-      config: {
-        auth: {},
-      },
+      config: {},
     },
 
     {

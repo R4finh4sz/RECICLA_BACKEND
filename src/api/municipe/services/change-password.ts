@@ -5,10 +5,6 @@ import bcrypt from 'bcryptjs';
 import { ZodError } from 'zod';
 import { ChangePasswordSchema, ChangePasswordInput } from '../validation/ChangePasswordSchema';
 import { getUserRoleName } from './helpers/get-user-role-name';
-import {
-  checkPasswordReuse,
-  storePasswordHash,
-} from './helpers/password-history';
 import { deriveSaltFromUser } from './helpers/derive-salt';
 
 // Exporta o handler principal do módulo Municipe.
@@ -71,19 +67,6 @@ export default ({ strapi }: { strapi: any }) => ({
       // Resposta sempre neutra — NUNCA diz se a senha atual está errada
       return ctx.badRequest('Credenciais inválidas.');
     }
-
-    // 6. Não permite reutilizar as 3 últimas senhas
-    // A senha nova não pode bater com nenhuma das 3 últimas (inclusive a atual)
-    const reused = await checkPasswordReuse(strapi, userId, data.newPassword);
-    // Executa rotina de troca de senha do usuário autenticado.
-    if (reused) {
-      return ctx.badRequest(
-        'Não é permitido reutilizar as 3 últimas senhas.'
-      );
-    }
-
-    // 7. Registra o hash da senha atual no histórico (ANTES)
-    await storePasswordHash(strapi, userId, hashed);
 
     // 8. Atualiza a senha no próprio Strapi
     const userService = strapi.plugin('users-permissions').service('user') as any;

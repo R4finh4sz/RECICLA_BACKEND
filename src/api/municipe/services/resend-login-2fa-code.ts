@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import { ZodError } from 'zod';
 import { LoginTwoFactorResendSchema, type LoginTwoFactorResendInput } from '../validation/LoginTwoFactorResendSchema';
-import { sendEmail } from './helpers/send-email';
 
 function generateLoginTwoFactorCode() {
   return String(crypto.randomInt(100000, 1000000));
@@ -55,12 +54,6 @@ export default ({ strapi }: { strapi: any }) => ({
         loginTwoFactorCode: code,
         loginTwoFactorExpiresAt: expiresAt.toISOString(),
       },
-    });
-
-    await sendEmail(strapi, {
-      to: email,
-      subject: 'Recicla+ - Reenvio do codigo de verificacao de login',
-      text: `Seu novo codigo de login e: ${code}\n\nEle expira em 10 minutos.`,
     });
 
     return {

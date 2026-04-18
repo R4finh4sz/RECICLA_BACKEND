@@ -4,7 +4,6 @@ import {
   RequestPasswordResetSchema,
   type RequestPasswordResetInput,
 } from '../validation/RequestPasswordResetSchema';
-import { sendEmail } from './helpers/send-email';
 
 function addMinutes(date: Date, minutes: number) {
   const d = new Date(date);
@@ -96,12 +95,6 @@ export default ({ strapi }: { strapi: any }) => ({
         passwordResetRequestsCount: cnt + 1,
         passwordResetRequestsWindowStart: windowStart ? windowStart.toISOString() : now.toISOString(),
       },
-    });
-
-    await sendEmail(strapi, {
-      to: email,
-      subject: 'Recicla+ - Código de redefinição de senha',
-      text: `Seu código é: ${code}\n\nEle expira em 10 minutos.`,
     });
 
     return { sent: true };

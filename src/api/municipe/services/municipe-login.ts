@@ -1,12 +1,11 @@
-// Este arquivo trata a autenticação, segurança de IP, dispositivos confiáveis e o "Manter Conectado".
+// Este arquivo trata a autenticação, proteção contra brute-force e fluxo de 2FA.
 
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { ZodError } from 'zod';
 import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeLoginSchema';
-import { sendEmail } from './helpers/send-email';
 import { deriveSaltFromUser } from './helpers/derive-salt';
-import { BruteForceService } from '../../../services/brute-force.service';
+import { BruteForceService } from './brute-force.service';
 
 const LOGIN_2FA_TTL_MS = 10 * 60 * 1000;
 
@@ -16,25 +15,6 @@ function generateLoginTwoFactorCode() {
 
 function generateChallengeId() {
   return crypto.randomUUID();
-}
-
-function addHours(date: Date, hours: number) {
-  const d = new Date(date);
-  d.setHours(d.getHours() + hours);
-  return d;
-}
-
-function getClientIp(ctx: any) {
-  return (
-    ctx.request?.headers?.['x-forwarded-for']?.split(',')?.[0]?.trim() ||
-    ctx.request?.ip ||
-    ctx.req?.socket?.remoteAddress ||
-    'unknown'
-  );
-}
-
-function getUserAgent(ctx: any) {
-  return String(ctx.request?.headers?.['user-agent'] || 'unknown');
 }
 
 async function getOrCreateAuthSecurity(strapi: any, userId: any) {
@@ -103,73 +83,8 @@ export default ({ strapi }: { strapi: any }) => ({
       }
       return ctx.badRequest('E-mail ou senha inválidos.');
     }
-
-
     const sec = await getOrCreateAuthSecurity(strapi, user.id);
-    const ip = getClientIp(ctx);
-    const userAgent = getUserAgent(ctx);
-    const nowDate = new Date();
-    const existingDevice = await strapi.documents('api::trusted-device.trusted-device').findFirst({
-      filters: {
-        user: { id: user.id as any },
-        ip,
-        userAgent,
-      },
-    });
 
-    const skipUntilRaw = (existingDevice as any)?.twoFactorSkipUntil;
-    const skipUntilMs = skipUntilRaw ? new Date(skipUntilRaw).getTime() : NaN;
-    const canSkipTwoFactor = Number.isFinite(skipUntilMs) && Date.now() <= skipUntilMs;
-
-    if (canSkipTwoFactor) {
-      const rememberJwt = Boolean(rememberMe);
-      const hours = rememberJwt ? 720 : 24;
-      const expiresIn = rememberJwt ? '30d' : '1d';
-      const tokenExpiresAt = addHours(nowDate, hours);
-
-      const jwtService = strapi.plugin('users-permissions').service('jwt');
-      const token = jwtService.issue({ id: user.id }, { expiresIn });
-
-      await strapi.documents('api::auth-security.auth-security').update({
-        documentId: String((sec as any).documentId || (sec as any).id),
-        data: {
-          lastLoginAt: nowDate,
-          loginTwoFactorChallengeId: null,
-          loginTwoFactorCode: null,
-          loginTwoFactorExpiresAt: null,
-          loginTwoFactorRememberMe: false,
-        },
-      });
-
-      await strapi.documents('api::trusted-device.trusted-device').update({
-        documentId: String((existingDevice as any).documentId || (existingDevice as any).id),
-        data: {
-          lastSeenAt: nowDate,
-          timesSeen: Number((existingDevice as any).timesSeen || 1) + 1,
-        },
-      });
-
-      return {
-        requiresTwoFactor: false,
-        twoFactorBypassed: true,
-        jwt: token,
-        user: {
-          id: user.id,
-          documentId: (user as any).documentId,
-          username: user.username,
-          email: user.email,
-          role: user.role ? {
-            id: user.role.id,
-            name: user.role.name,
-            type: user.role.type,
-          } : null,
-        },
-        rememberMe: rememberJwt,
-        expiresAt: tokenExpiresAt.toISOString(),
-      };
-    }
-
-    const userId = user.id;
     const now = Date.now();
     const code = generateLoginTwoFactorCode();
     const challengeId = generateChallengeId();
@@ -183,12 +98,6 @@ export default ({ strapi }: { strapi: any }) => ({
         loginTwoFactorExpiresAt: expiresAt.toISOString(),
         loginTwoFactorRememberMe: Boolean(rememberMe),
       },
-    });
-
-    await sendEmail(strapi, {
-      to: email,
-      subject: 'Recicla+ - Codigo de verificacao de login',
-      text: `Seu codigo de login e: ${code}\n\nEle expira em 10 minutos.`,
     });
 
     return {

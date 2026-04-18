@@ -7,23 +7,6 @@ function addHours(date: Date, hours: number) {
   return d;
 }
 
-function endOfToday(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
-}
-
-function getClientIp(ctx: any) {
-  return (
-    ctx.request?.headers?.['x-forwarded-for']?.split(',')?.[0]?.trim() ||
-    ctx.request?.ip ||
-    ctx.req?.socket?.remoteAddress ||
-    'unknown'
-  );
-}
-
-function getUserAgent(ctx: any) {
-  return String(ctx.request?.headers?.['user-agent'] || 'unknown');
-}
-
 export default ({ strapi }: { strapi: any }) => ({
   async execute(ctx: any) {
     let payload: LoginTwoFactorVerifyInput;
@@ -84,46 +67,9 @@ export default ({ strapi }: { strapi: any }) => ({
     const hours = rememberMe ? 720 : 24;
     const expiresIn = rememberMe ? '30d' : '1d';
     const tokenExpiresAt = addHours(now, hours);
-    const rememberDeviceToday = Boolean(payload.rememberDeviceToday);
-    const ip = getClientIp(ctx);
-    const userAgent = getUserAgent(ctx);
 
     const jwtService = strapi.plugin('users-permissions').service('jwt');
     const token = jwtService.issue({ id: user.id }, { expiresIn });
-
-    if (rememberDeviceToday) {
-      const skipUntil = endOfToday(now);
-      const existingDevice = await strapi.documents('api::trusted-device.trusted-device').findFirst({
-        filters: {
-          user: { id: user.id as any },
-          ip,
-          userAgent,
-        },
-      });
-
-      if (existingDevice) {
-        await strapi.documents('api::trusted-device.trusted-device').update({
-          documentId: String((existingDevice as any).documentId || (existingDevice as any).id),
-          data: {
-            lastSeenAt: now,
-            timesSeen: Number((existingDevice as any).timesSeen || 1) + 1,
-            twoFactorSkipUntil: skipUntil.toISOString(),
-          },
-        });
-      } else {
-        await strapi.documents('api::trusted-device.trusted-device').create({
-          data: {
-            user: user.id,
-            ip,
-            userAgent,
-            firstSeenAt: now,
-            lastSeenAt: now,
-            timesSeen: 1,
-            twoFactorSkipUntil: skipUntil.toISOString(),
-          },
-        });
-      }
-    }
 
     await strapi.documents('api::auth-security.auth-security').update({
       documentId: String((security as any).documentId || (security as any).id),
@@ -149,7 +95,7 @@ export default ({ strapi }: { strapi: any }) => ({
           type: user.role.type,
         } : null,
       },
-      twoFactorSkippedUntil: rememberDeviceToday ? endOfToday(now).toISOString() : null,
+      twoFactorSkippedUntil: null,
       rememberMe,
       expiresAt: tokenExpiresAt.toISOString(),
     };

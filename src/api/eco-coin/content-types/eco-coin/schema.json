@@ -1,0 +1,21 @@
+{
+  "kind": "collectionType",
+  "collectionName": "eco_coins",
+  "info": {
+    "singularName": "eco-coin",
+    "pluralName": "eco-coins",
+    "displayName": "Eco Coin"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Coin": {
+      "type": "decimal",
+      "required": false,
+      "default": 0,
+      "min": 0
+    }
+  }
+}
