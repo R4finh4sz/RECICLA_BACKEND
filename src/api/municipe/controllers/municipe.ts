@@ -67,6 +67,14 @@ export default factories.createCoreController(
       ctx.body = { data: result, message: "Senha alterada com sucesso!" };
     },
 
+    async deleteAccount(ctx) {
+      const result = await strapi
+        .service("api::municipe.delete-account")
+        .execute(ctx);
+      if (ctx.body) return;
+      ctx.body = { data: result, message: "Conta excluida permanentemente." };
+    },
+
     async requestPasswordReset(ctx) {
       const result = await strapi
         .service("api::municipe.request-password-reset")

@@ -48,6 +48,13 @@ export default {
 
     {
       method: "POST",
+      path: "/auth/delete-account",
+      handler: "api::municipe.municipe.deleteAccount",
+      config: {},
+    },
+
+    {
+      method: "POST",
       path: "/auth/request-password-reset",
       handler: "api::municipe.municipe.requestPasswordReset",
       config: { auth: false },
