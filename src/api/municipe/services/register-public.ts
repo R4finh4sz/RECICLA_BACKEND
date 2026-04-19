@@ -81,6 +81,7 @@ export default ({ strapi }: { strapi: any }) => ({
       });
 
     if (existingMunicipeByCpf) return ctx.badRequest("CPF já cadastrado.");
+
     const cepClean = normalizeCep(data.cep);
 
     const roleId = await getMunicipeRoleId(strapi);
@@ -132,6 +133,22 @@ export default ({ strapi }: { strapi: any }) => ({
       return ctx.badRequest(
         `Falha ao criar municipe.${column} ${detail}`.trim(),
       );
+    }
+
+    const existingWallet = await strapi
+      .documents("api::eco-coin.eco-coin")
+      .findFirst({
+        filters: { user: userId },
+        fields: ["id"],
+      });
+
+    if (!existingWallet) {
+      await strapi.documents("api::eco-coin.eco-coin").create({
+        data: {
+          balance: 0,
+          user: userId,
+        },
+      });
     }
 
     return { created: true };

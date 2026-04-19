@@ -597,7 +597,8 @@ export interface ApiEcoCoinEcoCoin extends Struct.CollectionTypeSchema {
     user: Schema.Attribute.Relation<
       'oneToOne',
       'plugin::users-permissions.user'
-    >;
+    > &
+      Schema.Attribute.Unique;
   };
 }
 

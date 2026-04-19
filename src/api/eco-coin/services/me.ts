@@ -3,11 +3,17 @@ export default ({ strapi }) => ({
     const userId = ctx.state.user?.id;
     if (!userId) ctx.unauthorized();
 
-    const wallet = await strapi.db.query("api::eco-coin.eco-coin").findOne({
+    const walletQuery = strapi.db.query("api::eco-coin.eco-coin");
+
+    let wallet = await walletQuery.findOne({
       where: { user: userId },
     });
 
-    if (!wallet) return { balance: 0 };
+    if (!wallet) {
+      wallet = await walletQuery.create({
+        data: { user: userId, balance: 0 },
+      });
+    }
 
     return { id: wallet.id, balance: wallet.balance };
   },

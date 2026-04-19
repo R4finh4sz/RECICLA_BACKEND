@@ -14,11 +14,17 @@ export default ({ strapi }) => ({
 
     if (!tradeItem) ctx.notFound("Trade item not found");
 
-    const wallet = await strapi.db.query("api::eco-coin.eco-coin").findOne({
+    const walletQuery = strapi.db.query("api::eco-coin.eco-coin");
+
+    let wallet = await walletQuery.findOne({
       where: { user: userId },
     });
 
-    if (!wallet) ctx.notFound("Eco Coin not found for this user");
+    if (!wallet) {
+      wallet = await walletQuery.create({
+        data: { user: userId, balance: 0 },
+      });
+    }
 
     const price = tradeItem.value;
 
@@ -26,7 +32,7 @@ export default ({ strapi }) => ({
 
     const newBalance = wallet.balance - price;
 
-    await strapi.db.query("api::eco-coin.eco-coin").update({
+    await walletQuery.update({
       where: { id: wallet.id },
       data: { balance: newBalance },
     });
