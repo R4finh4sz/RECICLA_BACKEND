@@ -6,6 +6,7 @@ import { ZodError } from 'zod';
 import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeLoginSchema';
 import { deriveSaltFromUser } from './helpers/derive-salt';
 import { BruteForceService } from './brute-force.service';
+import { sendEmail } from './helpers/send-email';
 
 const LOGIN_2FA_TTL_MS = 10 * 60 * 1000;
 
@@ -99,6 +100,19 @@ export default ({ strapi }: { strapi: any }) => ({
         loginTwoFactorRememberMe: Boolean(rememberMe),
       },
     });
+
+    try {
+      await sendEmail(strapi, {
+        to: String((user as any).email || email).toLowerCase(),
+        subject: 'Recicla+ - Codigo de verificacao de login',
+        text:
+          `Seu codigo de verificacao e: ${code}\n\n` +
+          `Ele expira em 10 minutos.`,
+      });
+    } catch (err: any) {
+      strapi.log.error(`[municipe-login] falha ao enviar codigo 2FA por email: ${String(err?.message || err)}`);
+      return ctx.internalServerError('Nao foi possivel enviar o codigo de verificacao por email.');
+    }
 
     return {
       requiresTwoFactor: true,
