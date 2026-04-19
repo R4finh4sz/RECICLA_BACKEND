@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi';
-import { BruteForceService } from '../services/brute-force.service';
+import { BruteForceService } from '../api/municipe/services/brute-force.service';
 
 export default (config, { strapi }: { strapi: Core.Strapi }) => {
   const bruteForceService = new BruteForceService(strapi);
