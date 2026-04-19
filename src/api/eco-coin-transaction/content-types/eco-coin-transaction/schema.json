@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "eco_coin_transactions",
+  "info": {
+    "singularName": "eco-coin-transaction",
+    "pluralName": "eco-coin-transactions",
+    "displayName": "Eco Coin Transaction"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "amount": {
+      "type": "integer",
+      "required": true,
+      "min": 0
+    },
+    "description": {
+      "type": "string"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "trade_item": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::trade-item.trade-item"
+    }
+  }
+}

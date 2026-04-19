@@ -7,15 +7,19 @@
     "displayName": "Eco Coin"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
-    "Coin": {
-      "type": "decimal",
-      "required": false,
-      "default": 0,
-      "min": 0
+    "balance": {
+      "type": "integer",
+      "min": 0,
+      "default": 0
+    },
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
     }
   }
 }

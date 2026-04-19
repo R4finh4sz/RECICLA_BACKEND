@@ -7,18 +7,35 @@
     "displayName": "Trade Item"
   },
   "options": {
-    "draftAndPublish": false
+    "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {
-    "Name": {
-      "type": "string"
+    "name": {
+      "type": "string",
+      "required": true
     },
-    "Description": {
-      "type": "string"
+    "value": {
+      "type": "integer",
+      "required": true,
+      "min": 0
     },
-    "Value": {
-      "type": "decimal"
+    "description": {
+      "type": "text"
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": ["itens", "category2", "category3"],
+      "required": true
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
     }
   }
 }

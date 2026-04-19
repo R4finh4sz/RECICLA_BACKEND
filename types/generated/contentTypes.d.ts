@@ -517,6 +517,51 @@ export interface ApiBruteForceAttemptBruteForceAttempt
   };
 }
 
+export interface ApiEcoCoinTransactionEcoCoinTransaction
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'eco_coin_transactions';
+  info: {
+    displayName: 'Eco Coin Transaction';
+    pluralName: 'eco-coin-transactions';
+    singularName: 'eco-coin-transaction';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    amount: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::eco-coin-transaction.eco-coin-transaction'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    trade_item: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::trade-item.trade-item'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiEcoCoinEcoCoin extends Struct.CollectionTypeSchema {
   collectionName: 'eco_coins';
   info: {
@@ -525,10 +570,10 @@ export interface ApiEcoCoinEcoCoin extends Struct.CollectionTypeSchema {
     singularName: 'eco-coin';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
-    Coin: Schema.Attribute.Decimal &
+    balance: Schema.Attribute.Integer &
       Schema.Attribute.SetMinMax<
         {
           min: 0;
@@ -549,6 +594,10 @@ export interface ApiEcoCoinEcoCoin extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
@@ -768,25 +817,38 @@ export interface ApiTradeItemTradeItem extends Struct.CollectionTypeSchema {
     singularName: 'trade-item';
   };
   options: {
-    draftAndPublish: false;
+    draftAndPublish: true;
   };
   attributes: {
+    active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    category: Schema.Attribute.Enumeration<
+      ['itens', 'category2', 'category3']
+    > &
+      Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    Description: Schema.Attribute.String;
+    description: Schema.Attribute.Text;
+    image: Schema.Attribute.Media<'images'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::trade-item.trade-item'
     > &
       Schema.Attribute.Private;
-    Name: Schema.Attribute.String;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    Value: Schema.Attribute.Decimal;
+    value: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
   };
 }
 
@@ -1303,6 +1365,7 @@ declare module '@strapi/strapi' {
       'admin::user': AdminUser;
       'api::auth-security.auth-security': ApiAuthSecurityAuthSecurity;
       'api::brute-force-attempt.brute-force-attempt': ApiBruteForceAttemptBruteForceAttempt;
+      'api::eco-coin-transaction.eco-coin-transaction': ApiEcoCoinTransactionEcoCoinTransaction;
       'api::eco-coin.eco-coin': ApiEcoCoinEcoCoin;
       'api::first-access-control.first-access-control': ApiFirstAccessControlFirstAccessControl;
       'api::municipe.municipe': ApiMunicipeMunicipe;
