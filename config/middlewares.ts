@@ -4,7 +4,17 @@ const config: Core.Config.Middlewares = [
   'strapi::logger',
   'global::remove-api-prefix',
   'strapi::errors',
-  'strapi::security',
+  'global::force-https',
+  {
+    name: 'strapi::security',
+    config: {
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+    },
+  },
   'strapi::cors',
   'strapi::poweredBy',
   'strapi::query',

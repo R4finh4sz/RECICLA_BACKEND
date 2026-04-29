@@ -687,6 +687,9 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     cpf: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+    cpfHash: Schema.Attribute.String &
+      Schema.Attribute.Private &
+      Schema.Attribute.Unique;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

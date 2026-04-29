@@ -3,6 +3,7 @@ import {
   RegisterMunicipePublicSchema,
   type RegisterMunicipePublicInput,
 } from "../validation/RegisterMunicipePublicSchema";
+import { buildSensitiveLookupHash } from "../../../utils/data-protection";
 
 function normalizeEmail(v: string) {
   return String(v || "")
@@ -63,6 +64,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
     const email = normalizeEmail(data.email);
     const cpf = normalizeCpf(data.cpf);
+    const cpfHash = buildSensitiveLookupHash(cpf);
 
     const existingUser = await strapi
       .documents("plugin::users-permissions.user")
@@ -76,8 +78,10 @@ export default ({ strapi }: { strapi: any }) => ({
     const existingMunicipeByCpf = await strapi
       .documents("api::municipe.municipe")
       .findFirst({
-        filters: { cpf },
-        fields: ["id"],
+        filters: {
+          $or: [{ cpfHash }, { cpf }],
+        },
+        fields: ["id", "cpfHash", "cpf"],
       });
 
     if (existingMunicipeByCpf) return ctx.badRequest("CPF já cadastrado.");

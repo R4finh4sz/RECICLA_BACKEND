@@ -20,6 +20,12 @@
       "required": true,
       "unique": true
     },
+    "cpfHash": {
+      "type": "string",
+      "unique": true,
+      "private": true,
+      "description": "Hash cego do CPF para busca/duplicidade sem expor o valor em texto puro"
+    },
     "dataNascimento": {
       "type": "date",
       "required": true
