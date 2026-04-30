@@ -6,6 +6,7 @@
 
 import { z, ZodError } from 'zod';
 import { ResetPasswordSchema, type ResetPasswordInput } from '../validation/ResetPasswordSchema';
+import { hashPassword } from '../../../utils/password-hash';
 
 export default ({ strapi }: { strapi: any }) => ({
   async execute(ctx: any) {
@@ -47,12 +48,12 @@ export default ({ strapi }: { strapi: any }) => ({
     const userId = userRef?.id ?? userRef ?? null;
     if (!userId) return ctx.badRequest('Dados do usuário inválidos.');
 
-    // 2) Atualiza a senha usando service do users-permissions
-    const userService = strapi.plugin('users-permissions').service('user') as any;
-    const updateUser = userService.update?.bind(userService) || userService.edit?.bind(userService);
-    if (!updateUser) return ctx.badRequest('Service users-permissions.user não expõe update/edit.');
-
-    await updateUser(userId, { password: newPassword });
+    // 2) Atualiza a senha usando hash configurável
+    const passwordHash = await hashPassword(newPassword);
+    await strapi.db.query('plugin::users-permissions.user').update({
+      where: { id: userId as any },
+      data: { password: passwordHash },
+    });
 
     // 3) Limpa campos de reset no FAC e marca usado
     await strapi.documents('api::first-access-control.first-access-control').update({

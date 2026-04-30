@@ -27,6 +27,15 @@ export default {
 
     {
       method: "PATCH",
+      path: "/auth/onboarding/revoke-terms",
+      handler: "api::municipe.municipe.onboardingRevokeTerms",
+      config: {
+        policies: ["global::municipe-onboarding-guard"],
+      },
+    },
+
+    {
+      method: "PATCH",
       path: "/auth/onboarding/accept-terms/public",
       handler: "api::municipe.municipe.onboardingAcceptTermsPublic",
       config: { auth: false },
@@ -93,6 +102,12 @@ export default {
       path: "/auth/local/resend-code",
       handler: "api::municipe.municipe.resendLoginTwoFactorCode",
       config: { auth: false },
+    },
+    {
+      method: "POST",
+      path: "/auth/logout",
+      handler: "api::municipe.municipe.logout",
+      config: {},
     },
   ],
 };

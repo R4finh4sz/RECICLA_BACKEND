@@ -4,6 +4,7 @@ import {
   type RegisterMunicipePublicInput,
 } from "../validation/RegisterMunicipePublicSchema";
 import { buildSensitiveLookupHash } from "../../../utils/data-protection";
+import { hashPassword } from "../../../utils/password-hash";
 
 function normalizeEmail(v: string) {
   return String(v || "")
@@ -91,22 +92,18 @@ export default ({ strapi }: { strapi: any }) => ({
     const roleId = await getMunicipeRoleId(strapi);
     if (!roleId) return ctx.badRequest("Role Municipe não encontrada.");
 
-    const userService = strapi
-      .plugin("users-permissions")
-      .service("user") as any;
-    const createUser =
-      userService.create?.bind(userService) ||
-      userService.add?.bind(userService);
-    if (!createUser)
-      return ctx.badRequest("Serviço de criação de usuário indisponível.");
+    const passwordHash = await hashPassword(data.password);
 
-    const createdUser = await createUser({
+    const createdUser = await strapi.db.query("plugin::users-permissions.user").create({
+      data: {
       email,
       username: (data.username || email.split("@")[0]).trim(),
-      password: data.password,
+      provider: "local",
+      password: passwordHash,
       role: roleId,
       confirmed: true,
       blocked: false,
+      },
     });
 
     const userId = (createdUser as any).id;

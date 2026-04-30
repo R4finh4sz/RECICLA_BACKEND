@@ -7,6 +7,7 @@ import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeL
 import { deriveSaltFromUser } from './helpers/derive-salt';
 import { BruteForceService } from './brute-force.service';
 import { sendEmail } from './helpers/send-email';
+import { appendSecurityAuditLog } from '../../../utils/security-audit-log';
 
 const LOGIN_2FA_TTL_MS = 10 * 60 * 1000;
 
@@ -16,6 +17,12 @@ function generateLoginTwoFactorCode() {
 
 function generateChallengeId() {
   return crypto.randomUUID();
+}
+
+function getClientIp(ctx: any) {
+  const xf = String(ctx?.request?.header?.['x-forwarded-for'] || '');
+  if (xf) return xf.split(',')[0].trim();
+  return String(ctx?.request?.ip || ctx?.ip || 'unknown');
 }
 
 async function getOrCreateAuthSecurity(strapi: any, userId: any) {
@@ -45,9 +52,23 @@ export default ({ strapi }: { strapi: any }) => ({
 
     const { email, password, rememberMe } = data;
     const bruteForceService = new BruteForceService(strapi);
+    const ip = getClientIp(ctx);
+    const userAgent = String(ctx?.request?.header?.['user-agent'] || '');
 
     // 1. Verificar se o identificador (email) está bloqueado
     if (await bruteForceService.isBlocked(email)) {
+      try {
+        await appendSecurityAuditLog(strapi, {
+          eventType: 'auth.login.blocked',
+          level: 'warn',
+          message: 'Tentativa de login bloqueada por brute force.',
+          userEmailMasked: `${email.slice(0, 2)}***`,
+          ip,
+          userAgent,
+        });
+      } catch (err: any) {
+        strapi.log.error(`[security-audit] falha ao registrar evento auth.login.blocked: ${String(err?.message || err)}`);
+      }
       return ctx.tooManyRequests('Sua conta está temporariamente bloqueada devido a muitas tentativas falhas. Tente novamente em 15 minutos.');
     }
 
@@ -59,6 +80,18 @@ export default ({ strapi }: { strapi: any }) => ({
 
     if (!user || !user.password) {
       await bruteForceService.recordAttempt(email, false);
+      try {
+        await appendSecurityAuditLog(strapi, {
+          eventType: 'auth.login.failed',
+          level: 'warn',
+          message: 'Falha de autenticacao por credenciais invalidas.',
+          userEmailMasked: `${email.slice(0, 2)}***`,
+          ip,
+          userAgent,
+        });
+      } catch (err: any) {
+        strapi.log.error(`[security-audit] falha ao registrar evento auth.login.failed: ${String(err?.message || err)}`);
+      }
       return ctx.badRequest('E-mail ou senha inválidos.');
     }
 
@@ -81,6 +114,20 @@ export default ({ strapi }: { strapi: any }) => ({
     if (!validPassword) {
       if (attempt.delayMs > 0) {
         await new Promise(resolve => setTimeout(resolve, attempt.delayMs));
+      }
+      try {
+        await appendSecurityAuditLog(strapi, {
+          eventType: 'auth.login.failed',
+          level: 'warn',
+          message: 'Falha de autenticacao por senha invalida.',
+          userId: user.id,
+          userEmailMasked: `${email.slice(0, 2)}***`,
+          ip,
+          userAgent,
+          metadata: { blocked: attempt.blocked },
+        });
+      } catch (err: any) {
+        strapi.log.error(`[security-audit] falha ao registrar evento auth.login.failed: ${String(err?.message || err)}`);
       }
       return ctx.badRequest('E-mail ou senha inválidos.');
     }
@@ -112,6 +159,21 @@ export default ({ strapi }: { strapi: any }) => ({
     } catch (err: any) {
       strapi.log.error(`[municipe-login] falha ao enviar codigo 2FA por email: ${String(err?.message || err)}`);
       return ctx.internalServerError('Nao foi possivel enviar o codigo de verificacao por email.');
+    }
+
+    try {
+      await appendSecurityAuditLog(strapi, {
+        eventType: 'auth.login.2fa-challenge-issued',
+        level: 'info',
+        message: 'Desafio de 2FA emitido para autenticacao.',
+        userId: user.id,
+        userEmailMasked: `${email.slice(0, 2)}***`,
+        ip,
+        userAgent,
+        metadata: { expiresAt: expiresAt.toISOString() },
+      });
+    } catch (err: any) {
+      strapi.log.error(`[security-audit] falha ao registrar evento auth.login.2fa-challenge-issued: ${String(err?.message || err)}`);
     }
 
     return {

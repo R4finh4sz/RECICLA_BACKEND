@@ -750,6 +750,51 @@ export interface ApiRevokedTokenRevokedToken
   };
 }
 
+export interface ApiSecurityAuditLogSecurityAuditLog
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'security_audit_logs';
+  info: {
+    description: 'Eventos de seguranca com assinatura e encadeamento para deteccao de alteracao';
+    displayName: 'Security Audit Log';
+    pluralName: 'security-audit-logs';
+    singularName: 'security-audit-log';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    eventType: Schema.Attribute.String & Schema.Attribute.Required;
+    hash: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    ip: Schema.Attribute.String;
+    level: Schema.Attribute.Enumeration<['info', 'warn', 'error']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'info'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::security-audit-log.security-audit-log'
+    > &
+      Schema.Attribute.Private;
+    message: Schema.Attribute.Text & Schema.Attribute.Required;
+    metadata: Schema.Attribute.JSON;
+    occurredAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    previousHash: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    signature: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    userAgent: Schema.Attribute.Text;
+    userEmailMasked: Schema.Attribute.String;
+    userId: Schema.Attribute.String;
+  };
+}
+
 export interface ApiTermListTermList extends Struct.CollectionTypeSchema {
   collectionName: 'term_lists';
   info: {
@@ -1374,6 +1419,7 @@ declare module '@strapi/strapi' {
       'api::first-access-control.first-access-control': ApiFirstAccessControlFirstAccessControl;
       'api::municipe.municipe': ApiMunicipeMunicipe;
       'api::revoked-token.revoked-token': ApiRevokedTokenRevokedToken;
+      'api::security-audit-log.security-audit-log': ApiSecurityAuditLogSecurityAuditLog;
       'api::term-list.term-list': ApiTermListTermList;
       'api::termo.termo': ApiTermoTermo;
       'api::trade-item.trade-item': ApiTradeItemTradeItem;

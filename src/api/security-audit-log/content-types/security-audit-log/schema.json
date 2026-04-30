@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "security_audit_logs",
+  "info": {
+    "singularName": "security-audit-log",
+    "pluralName": "security-audit-logs",
+    "displayName": "Security Audit Log",
+    "description": "Eventos de seguranca com assinatura e encadeamento para deteccao de alteracao"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "eventType": {
+      "type": "string",
+      "required": true
+    },
+    "level": {
+      "type": "enumeration",
+      "enum": ["info", "warn", "error"],
+      "default": "info",
+      "required": true
+    },
+    "message": {
+      "type": "text",
+      "required": true
+    },
+    "userId": {
+      "type": "string"
+    },
+    "userEmailMasked": {
+      "type": "string"
+    },
+    "ip": {
+      "type": "string"
+    },
+    "userAgent": {
+      "type": "text"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "occurredAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "previousHash": {
+      "type": "string",
+      "required": true
+    },
+    "hash": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "signature": {
+      "type": "string",
+      "required": true
+    }
+  }
+}
