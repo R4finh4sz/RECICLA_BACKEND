@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "eco_coins",
+  "info": {
+    "singularName": "eco-coin",
+    "pluralName": "eco-coins",
+    "displayName": "Eco Coin"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "balance": {
+      "type": "integer",
+      "min": 0,
+      "default": 0
+    },
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user",
+      "unique": true
+    }
+  }
+}

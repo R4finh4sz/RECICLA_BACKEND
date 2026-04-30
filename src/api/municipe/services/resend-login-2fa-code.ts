@@ -57,11 +57,18 @@ export default ({ strapi }: { strapi: any }) => ({
       },
     });
 
-    await sendEmail(strapi, {
-      to: email,
-      subject: 'Recicla+ - Reenvio do codigo de verificacao de login',
-      text: `Seu novo codigo de login e: ${code}\n\nEle expira em 10 minutos.`,
-    });
+    try {
+      await sendEmail(strapi, {
+        to: email,
+        subject: 'Recicla+ - Reenvio do codigo de verificacao',
+        text:
+          `Seu novo codigo de verificacao e: ${code}\n\n` +
+          `Ele expira em 10 minutos.`,
+      });
+    } catch (err: any) {
+      strapi.log.error(`[resend-login-2fa-code] falha ao reenviar codigo 2FA por email: ${String(err?.message || err)}`);
+      return ctx.internalServerError('Nao foi possivel reenviar o codigo de verificacao por email.');
+    }
 
     return {
       sent: true,

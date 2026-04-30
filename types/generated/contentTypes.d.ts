@@ -517,36 +517,88 @@ export interface ApiBruteForceAttemptBruteForceAttempt
   };
 }
 
-export interface ApiEcoPointEcoPoint extends Struct.CollectionTypeSchema {
-  collectionName: 'eco_points';
+export interface ApiEcoCoinTransactionEcoCoinTransaction
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'eco_coin_transactions';
   info: {
-    displayName: 'Eco Point';
-    pluralName: 'eco-points';
-    singularName: 'eco-point';
+    displayName: 'Eco Coin Transaction';
+    pluralName: 'eco-coin-transactions';
+    singularName: 'eco-coin-transaction';
   };
   options: {
     draftAndPublish: false;
   };
   attributes: {
-    Amount_Storage: Schema.Attribute.Integer & Schema.Attribute.Required;
+    amount: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::eco-coin-transaction.eco-coin-transaction'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    trade_item: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::trade-item.trade-item'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiEcoCoinEcoCoin extends Struct.CollectionTypeSchema {
+  collectionName: 'eco_coins';
+  info: {
+    displayName: 'Eco Coin';
+    pluralName: 'eco-coins';
+    singularName: 'eco-coin';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    balance: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::eco-point.eco-point'
+      'api::eco-coin.eco-coin'
     > &
       Schema.Attribute.Private;
-    Points: Schema.Attribute.Decimal & Schema.Attribute.Required;
-    Product_Name: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 30;
-      }>;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Unique;
   };
 }
 
@@ -635,6 +687,9 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     cpf: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+    cpfHash: Schema.Attribute.String &
+      Schema.Attribute.Private &
+      Schema.Attribute.Unique;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -659,40 +714,6 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
       'oneToOne',
       'plugin::users-permissions.user'
     >;
-  };
-}
-
-export interface ApiPasswordHistoryPasswordHistory
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'password_histories';
-  info: {
-    displayName: 'Password History';
-    pluralName: 'password-histories';
-    singularName: 'password-history';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::password-history.password-history'
-    > &
-      Schema.Attribute.Private;
-    passwordHash: Schema.Attribute.Text & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    > &
-      Schema.Attribute.Required;
   };
 }
 
@@ -726,6 +747,51 @@ export interface ApiRevokedTokenRevokedToken
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiSecurityAuditLogSecurityAuditLog
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'security_audit_logs';
+  info: {
+    description: 'Eventos de seguranca com assinatura e encadeamento para deteccao de alteracao';
+    displayName: 'Security Audit Log';
+    pluralName: 'security-audit-logs';
+    singularName: 'security-audit-log';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    eventType: Schema.Attribute.String & Schema.Attribute.Required;
+    hash: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    ip: Schema.Attribute.String;
+    level: Schema.Attribute.Enumeration<['info', 'warn', 'error']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'info'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::security-audit-log.security-audit-log'
+    > &
+      Schema.Attribute.Private;
+    message: Schema.Attribute.Text & Schema.Attribute.Required;
+    metadata: Schema.Attribute.JSON;
+    occurredAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    previousHash: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    signature: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    userAgent: Schema.Attribute.Text;
+    userEmailMasked: Schema.Attribute.String;
+    userId: Schema.Attribute.String;
   };
 }
 
@@ -792,41 +858,46 @@ export interface ApiTermoTermo extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiTrustedDeviceTrustedDevice
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'trusted_devices';
+export interface ApiTradeItemTradeItem extends Struct.CollectionTypeSchema {
+  collectionName: 'trade_items';
   info: {
-    displayName: 'Trusted Device';
-    pluralName: 'trusted-devices';
-    singularName: 'trusted-device';
+    displayName: 'Trade Item';
+    pluralName: 'trade-items';
+    singularName: 'trade-item';
   };
   options: {
-    draftAndPublish: false;
+    draftAndPublish: true;
   };
   attributes: {
+    active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    category: Schema.Attribute.Enumeration<
+      ['itens', 'category2', 'category3']
+    > &
+      Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    firstSeenAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
-    ip: Schema.Attribute.String & Schema.Attribute.Required;
-    lastSeenAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    description: Schema.Attribute.Text;
+    image: Schema.Attribute.Media<'images'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::trusted-device.trusted-device'
+      'api::trade-item.trade-item'
     > &
       Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
-    timesSeen: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
-    twoFactorSkipUntil: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    userAgent: Schema.Attribute.Text & Schema.Attribute.Required;
+    value: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
   };
 }
 
@@ -1343,14 +1414,15 @@ declare module '@strapi/strapi' {
       'admin::user': AdminUser;
       'api::auth-security.auth-security': ApiAuthSecurityAuthSecurity;
       'api::brute-force-attempt.brute-force-attempt': ApiBruteForceAttemptBruteForceAttempt;
-      'api::eco-point.eco-point': ApiEcoPointEcoPoint;
+      'api::eco-coin-transaction.eco-coin-transaction': ApiEcoCoinTransactionEcoCoinTransaction;
+      'api::eco-coin.eco-coin': ApiEcoCoinEcoCoin;
       'api::first-access-control.first-access-control': ApiFirstAccessControlFirstAccessControl;
       'api::municipe.municipe': ApiMunicipeMunicipe;
-      'api::password-history.password-history': ApiPasswordHistoryPasswordHistory;
       'api::revoked-token.revoked-token': ApiRevokedTokenRevokedToken;
+      'api::security-audit-log.security-audit-log': ApiSecurityAuditLogSecurityAuditLog;
       'api::term-list.term-list': ApiTermListTermList;
       'api::termo.termo': ApiTermoTermo;
-      'api::trusted-device.trusted-device': ApiTrustedDeviceTrustedDevice;
+      'api::trade-item.trade-item': ApiTradeItemTradeItem;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

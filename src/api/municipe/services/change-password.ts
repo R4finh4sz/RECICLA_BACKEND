@@ -5,11 +5,8 @@ import bcrypt from 'bcryptjs';
 import { ZodError } from 'zod';
 import { ChangePasswordSchema, ChangePasswordInput } from '../validation/ChangePasswordSchema';
 import { getUserRoleName } from './helpers/get-user-role-name';
-import {
-  checkPasswordReuse,
-  storePasswordHash,
-} from './helpers/password-history';
 import { deriveSaltFromUser } from './helpers/derive-salt';
+import { hashPassword } from '../../../utils/password-hash';
 
 // Exporta o handler principal do módulo Municipe.
 export default ({ strapi }: { strapi: any }) => ({
@@ -72,37 +69,15 @@ export default ({ strapi }: { strapi: any }) => ({
       return ctx.badRequest('Credenciais inválidas.');
     }
 
-    // 6. Não permite reutilizar as 3 últimas senhas
-    // A senha nova não pode bater com nenhuma das 3 últimas (inclusive a atual)
-    const reused = await checkPasswordReuse(strapi, userId, data.newPassword);
-    // Executa rotina de troca de senha do usuário autenticado.
-    if (reused) {
-      return ctx.badRequest(
-        'Não é permitido reutilizar as 3 últimas senhas.'
-      );
-    }
-
-    // 7. Registra o hash da senha atual no histórico (ANTES)
-    await storePasswordHash(strapi, userId, hashed);
-
-    // 8. Atualiza a senha no próprio Strapi
-    const userService = strapi.plugin('users-permissions').service('user') as any;
-    const updateUser =
-      userService.update?.bind(userService) ||
-      userService.edit?.bind(userService);
-
-    // Executa rotina de troca de senha do usuário autenticado.
-    if (!updateUser) {
-      return ctx.badRequest(
-        'Serviço users-permissions.user não expõe update/edit.'
-      );
-    }
-
-    // enviar a senha com derived salt (se disponível) para que o Strapi faça o hash normalmente
+    // 8. Atualiza a senha com hash configurável
     const derivedForNew = deriveSaltFromUser(user as any);
     const toSavePassword = derivedForNew ? data.newPassword + '::' + derivedForNew : data.newPassword;
+    const passwordHash = await hashPassword(toSavePassword);
 
-    await updateUser(userId, { password: toSavePassword });
+    await strapi.db.query('plugin::users-permissions.user').update({
+      where: { id: userId as any },
+      data: { password: passwordHash },
+    });
 
     // 9. Retorna sucesso: padrão
     return { changed: true };

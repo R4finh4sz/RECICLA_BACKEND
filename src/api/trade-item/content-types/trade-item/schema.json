@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "trade_items",
+  "info": {
+    "singularName": "trade-item",
+    "pluralName": "trade-items",
+    "displayName": "Trade Item"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "value": {
+      "type": "integer",
+      "required": true,
+      "min": 0
+    },
+    "description": {
+      "type": "text"
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": ["itens", "category2", "category3"],
+      "required": true
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

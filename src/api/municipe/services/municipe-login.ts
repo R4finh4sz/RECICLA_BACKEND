@@ -1,12 +1,13 @@
-// Este arquivo trata a autenticação, segurança de IP, dispositivos confiáveis e o "Manter Conectado".
+// Este arquivo trata a autenticação, proteção contra brute-force e fluxo de 2FA.
 
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { ZodError } from 'zod';
 import { MunicipeLoginSchema, MunicipeLoginInput } from '../validation/MunicipeLoginSchema';
-import { sendEmail } from './helpers/send-email';
 import { deriveSaltFromUser } from './helpers/derive-salt';
-import { BruteForceService } from '../../../services/brute-force.service';
+import { BruteForceService } from './brute-force.service';
+import { sendEmail } from './helpers/send-email';
+import { appendSecurityAuditLog } from '../../../utils/security-audit-log';
 
 const LOGIN_2FA_TTL_MS = 10 * 60 * 1000;
 
@@ -18,23 +19,10 @@ function generateChallengeId() {
   return crypto.randomUUID();
 }
 
-function addHours(date: Date, hours: number) {
-  const d = new Date(date);
-  d.setHours(d.getHours() + hours);
-  return d;
-}
-
 function getClientIp(ctx: any) {
-  return (
-    ctx.request?.headers?.['x-forwarded-for']?.split(',')?.[0]?.trim() ||
-    ctx.request?.ip ||
-    ctx.req?.socket?.remoteAddress ||
-    'unknown'
-  );
-}
-
-function getUserAgent(ctx: any) {
-  return String(ctx.request?.headers?.['user-agent'] || 'unknown');
+  const xf = String(ctx?.request?.header?.['x-forwarded-for'] || '');
+  if (xf) return xf.split(',')[0].trim();
+  return String(ctx?.request?.ip || ctx?.ip || 'unknown');
 }
 
 async function getOrCreateAuthSecurity(strapi: any, userId: any) {
@@ -64,9 +52,23 @@ export default ({ strapi }: { strapi: any }) => ({
 
     const { email, password, rememberMe } = data;
     const bruteForceService = new BruteForceService(strapi);
+    const ip = getClientIp(ctx);
+    const userAgent = String(ctx?.request?.header?.['user-agent'] || '');
 
     // 1. Verificar se o identificador (email) está bloqueado
     if (await bruteForceService.isBlocked(email)) {
+      try {
+        await appendSecurityAuditLog(strapi, {
+          eventType: 'auth.login.blocked',
+          level: 'warn',
+          message: 'Tentativa de login bloqueada por brute force.',
+          userEmailMasked: `${email.slice(0, 2)}***`,
+          ip,
+          userAgent,
+        });
+      } catch (err: any) {
+        strapi.log.error(`[security-audit] falha ao registrar evento auth.login.blocked: ${String(err?.message || err)}`);
+      }
       return ctx.tooManyRequests('Sua conta está temporariamente bloqueada devido a muitas tentativas falhas. Tente novamente em 15 minutos.');
     }
 
@@ -78,6 +80,18 @@ export default ({ strapi }: { strapi: any }) => ({
 
     if (!user || !user.password) {
       await bruteForceService.recordAttempt(email, false);
+      try {
+        await appendSecurityAuditLog(strapi, {
+          eventType: 'auth.login.failed',
+          level: 'warn',
+          message: 'Falha de autenticacao por credenciais invalidas.',
+          userEmailMasked: `${email.slice(0, 2)}***`,
+          ip,
+          userAgent,
+        });
+      } catch (err: any) {
+        strapi.log.error(`[security-audit] falha ao registrar evento auth.login.failed: ${String(err?.message || err)}`);
+      }
       return ctx.badRequest('E-mail ou senha inválidos.');
     }
 
@@ -101,75 +115,24 @@ export default ({ strapi }: { strapi: any }) => ({
       if (attempt.delayMs > 0) {
         await new Promise(resolve => setTimeout(resolve, attempt.delayMs));
       }
+      try {
+        await appendSecurityAuditLog(strapi, {
+          eventType: 'auth.login.failed',
+          level: 'warn',
+          message: 'Falha de autenticacao por senha invalida.',
+          userId: user.id,
+          userEmailMasked: `${email.slice(0, 2)}***`,
+          ip,
+          userAgent,
+          metadata: { blocked: attempt.blocked },
+        });
+      } catch (err: any) {
+        strapi.log.error(`[security-audit] falha ao registrar evento auth.login.failed: ${String(err?.message || err)}`);
+      }
       return ctx.badRequest('E-mail ou senha inválidos.');
     }
-
-
     const sec = await getOrCreateAuthSecurity(strapi, user.id);
-    const ip = getClientIp(ctx);
-    const userAgent = getUserAgent(ctx);
-    const nowDate = new Date();
-    const existingDevice = await strapi.documents('api::trusted-device.trusted-device').findFirst({
-      filters: {
-        user: { id: user.id as any },
-        ip,
-        userAgent,
-      },
-    });
 
-    const skipUntilRaw = (existingDevice as any)?.twoFactorSkipUntil;
-    const skipUntilMs = skipUntilRaw ? new Date(skipUntilRaw).getTime() : NaN;
-    const canSkipTwoFactor = Number.isFinite(skipUntilMs) && Date.now() <= skipUntilMs;
-
-    if (canSkipTwoFactor) {
-      const rememberJwt = Boolean(rememberMe);
-      const hours = rememberJwt ? 720 : 24;
-      const expiresIn = rememberJwt ? '30d' : '1d';
-      const tokenExpiresAt = addHours(nowDate, hours);
-
-      const jwtService = strapi.plugin('users-permissions').service('jwt');
-      const token = jwtService.issue({ id: user.id }, { expiresIn });
-
-      await strapi.documents('api::auth-security.auth-security').update({
-        documentId: String((sec as any).documentId || (sec as any).id),
-        data: {
-          lastLoginAt: nowDate,
-          loginTwoFactorChallengeId: null,
-          loginTwoFactorCode: null,
-          loginTwoFactorExpiresAt: null,
-          loginTwoFactorRememberMe: false,
-        },
-      });
-
-      await strapi.documents('api::trusted-device.trusted-device').update({
-        documentId: String((existingDevice as any).documentId || (existingDevice as any).id),
-        data: {
-          lastSeenAt: nowDate,
-          timesSeen: Number((existingDevice as any).timesSeen || 1) + 1,
-        },
-      });
-
-      return {
-        requiresTwoFactor: false,
-        twoFactorBypassed: true,
-        jwt: token,
-        user: {
-          id: user.id,
-          documentId: (user as any).documentId,
-          username: user.username,
-          email: user.email,
-          role: user.role ? {
-            id: user.role.id,
-            name: user.role.name,
-            type: user.role.type,
-          } : null,
-        },
-        rememberMe: rememberJwt,
-        expiresAt: tokenExpiresAt.toISOString(),
-      };
-    }
-
-    const userId = user.id;
     const now = Date.now();
     const code = generateLoginTwoFactorCode();
     const challengeId = generateChallengeId();
@@ -185,11 +148,33 @@ export default ({ strapi }: { strapi: any }) => ({
       },
     });
 
-    await sendEmail(strapi, {
-      to: email,
-      subject: 'Recicla+ - Codigo de verificacao de login',
-      text: `Seu codigo de login e: ${code}\n\nEle expira em 10 minutos.`,
-    });
+    try {
+      await sendEmail(strapi, {
+        to: String((user as any).email || email).toLowerCase(),
+        subject: 'Recicla+ - Codigo de verificacao de login',
+        text:
+          `Seu codigo de verificacao e: ${code}\n\n` +
+          `Ele expira em 10 minutos.`,
+      });
+    } catch (err: any) {
+      strapi.log.error(`[municipe-login] falha ao enviar codigo 2FA por email: ${String(err?.message || err)}`);
+      return ctx.internalServerError('Nao foi possivel enviar o codigo de verificacao por email.');
+    }
+
+    try {
+      await appendSecurityAuditLog(strapi, {
+        eventType: 'auth.login.2fa-challenge-issued',
+        level: 'info',
+        message: 'Desafio de 2FA emitido para autenticacao.',
+        userId: user.id,
+        userEmailMasked: `${email.slice(0, 2)}***`,
+        ip,
+        userAgent,
+        metadata: { expiresAt: expiresAt.toISOString() },
+      });
+    } catch (err: any) {
+      strapi.log.error(`[security-audit] falha ao registrar evento auth.login.2fa-challenge-issued: ${String(err?.message || err)}`);
+    }
 
     return {
       requiresTwoFactor: true,

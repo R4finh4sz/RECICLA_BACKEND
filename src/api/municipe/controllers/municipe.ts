@@ -34,6 +34,17 @@ export default factories.createCoreController(
       };
     },
 
+    async onboardingRevokeTerms(ctx) {
+      const result = await strapi
+        .service("api::municipe.onboarding-revoke-terms")
+        .execute(ctx);
+      if (ctx.body) return;
+      ctx.body = {
+        data: result,
+        message: "Consentimento revogado com sucesso.",
+      };
+    },
+
     async onboardingAcceptTermsPublic(ctx) {
       const result = await strapi
         .service("api::municipe.onboarding-accept-terms-public")
@@ -65,6 +76,14 @@ export default factories.createCoreController(
         .execute(ctx);
       if (ctx.body) return;
       ctx.body = { data: result, message: "Senha alterada com sucesso!" };
+    },
+
+    async deleteAccount(ctx) {
+      const result = await strapi
+        .service("api::municipe.delete-account")
+        .execute(ctx);
+      if (ctx.body) return;
+      ctx.body = { data: result, message: "Conta excluida permanentemente." };
     },
 
     async requestPasswordReset(ctx) {
@@ -135,6 +154,27 @@ export default factories.createCoreController(
         .execute(ctx);
       if (ctx.body) return;
       ctx.body = { data: result, message: "Se a sessao existir, um novo codigo foi enviado." };
+    },
+
+    async logout(ctx) {
+      const { request } = ctx;
+      const authHeader = request.header && request.header.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return ctx.badRequest('No token provided');
+      }
+
+      const token = authHeader.split(' ')[1];
+
+      const { TokenRevocationService } = await import("../services/token-revocation.service.js");
+      const revocationService = new TokenRevocationService(strapi);
+
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 2);
+
+      await revocationService.revoke(token, expiresAt);
+
+      ctx.send({ message: 'Successfully logged out and token invalidated' });
     },
 
   }),

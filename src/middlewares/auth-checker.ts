@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi';
-import { TokenRevocationService } from '../services/token-revocation.service';
+import { TokenRevocationService } from '../api/municipe/services/token-revocation.service';
 
 export default (config, { strapi }: { strapi: Core.Strapi }) => {
   const revocationService = new TokenRevocationService(strapi);
