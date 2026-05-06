@@ -16,9 +16,7 @@ interface SecurityAuditPayload {
 
 function getAuditSecret() {
   const secret = String(process.env.AUDIT_LOG_SECRET || '').trim();
-  if (!secret) {
-    throw new Error('AUDIT_LOG_SECRET ausente. Configure chave para assinatura de auditoria.');
-  }
+  if (!secret) return null;
   return secret;
 }
 
@@ -48,6 +46,10 @@ function hmacSha256(value: string, secret: string) {
 
 export async function appendSecurityAuditLog(strapi: any, payload: SecurityAuditPayload) {
   const secret = getAuditSecret();
+  if (!secret) {
+    strapi?.log?.warn?.('[security-audit] AUDIT_LOG_SECRET ausente. Evento de auditoria nao assinado e nao persistido.');
+    return { hash: null, signature: null, skipped: true };
+  }
 
   const last = await strapi.db.query('api::security-audit-log.security-audit-log').findOne({
     orderBy: { createdAt: 'desc' },
