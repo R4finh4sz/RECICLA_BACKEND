@@ -5,9 +5,9 @@ const ENCRYPTION_PREFIX = 'enc::v1::';
 let cachedKey: Buffer | null = null;
 
 function getRawKey() {
-  const raw = process.env.DATA_ENCRYPTION_KEY;
+  const raw = process.env.DATA_ENCRYPTION_KEY || process.env.ENCRYPTION_KEY;
   if (!raw) {
-    throw new Error('DATA_ENCRYPTION_KEY ausente. Configure uma chave base64 de 32 bytes.');
+    throw new Error('DATA_ENCRYPTION_KEY ausente. Configure DATA_ENCRYPTION_KEY ou ENCRYPTION_KEY como base64 de 32 bytes.');
   }
 
   return raw.trim();
@@ -20,7 +20,7 @@ function getEncryptionKey() {
   const key = Buffer.from(raw, 'base64');
 
   if (key.length !== 32) {
-    throw new Error('DATA_ENCRYPTION_KEY inválida. Esperado: base64 de 32 bytes (AES-256).');
+    throw new Error('Chave de criptografia inválida. Esperado: base64 de 32 bytes (AES-256).');
   }
 
   cachedKey = key;
