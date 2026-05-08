@@ -100,7 +100,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
     await sendEmail(strapi, {
       to: email,
-      subject: 'Recicla+ - Reenvio do código de confirmação',
+      subject: 'Recicla Online - Reenvio do código de confirmação',
       text:
         `Seu novo código de confirmação é: ${confirmationCode}\n\n` +
         `Ele expira em 10 minutos.`,

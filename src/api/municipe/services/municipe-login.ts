@@ -151,7 +151,7 @@ export default ({ strapi }: { strapi: any }) => ({
     try {
       await sendEmail(strapi, {
         to: String((user as any).email || email).toLowerCase(),
-        subject: 'Recicla+ - Codigo de verificacao de login',
+        subject: 'Recicla Online - Codigo de verificacao de login',
         text:
           `Seu codigo de verificacao e: ${code}\n\n` +
           `Ele expira em 10 minutos.`,

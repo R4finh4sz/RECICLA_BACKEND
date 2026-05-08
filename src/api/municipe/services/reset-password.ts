@@ -1,9 +1,3 @@
-// Reset de senha por token (deslogado).
-// Eu aplico as RN de:
-// - token gerado após validação do código (15 min)
-// - senha nova precisa seguir o formato (validação via Zod)
-// - mensagens neutras para não vazar informação.
-
 import { z, ZodError } from 'zod';
 import { ResetPasswordSchema, type ResetPasswordInput } from '../validation/ResetPasswordSchema';
 import { hashPassword } from '../../../utils/password-hash';
@@ -31,7 +25,6 @@ export default ({ strapi }: { strapi: any }) => ({
 
     const { resetToken, newPassword } = data;
 
-    // 1) Localiza FAC pelo token
     const now = new Date();
     const fac = await strapi.documents('api::first-access-control.first-access-control').findFirst({
       filters: { passwordResetToken: resetToken },
@@ -48,14 +41,12 @@ export default ({ strapi }: { strapi: any }) => ({
     const userId = userRef?.id ?? userRef ?? null;
     if (!userId) return ctx.badRequest('Dados do usuário inválidos.');
 
-    // 2) Atualiza a senha usando hash configurável
     const passwordHash = await hashPassword(newPassword);
     await strapi.db.query('plugin::users-permissions.user').update({
       where: { id: userId as any },
       data: { password: passwordHash },
     });
 
-    // 3) Limpa campos de reset no FAC e marca usado
     await strapi.documents('api::first-access-control.first-access-control').update({
       documentId: String(fac.documentId || fac.id),
       data: {
@@ -69,7 +60,6 @@ export default ({ strapi }: { strapi: any }) => ({
       },
     });
 
-    // 4) Opcional: invalidar sessões do usuário (se houver implementado)
     return { success: true, message: 'Senha alterada com sucesso.' };
   },
 });

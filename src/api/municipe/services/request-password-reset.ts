@@ -5,6 +5,7 @@ import {
   type RequestPasswordResetInput,
 } from '../validation/RequestPasswordResetSchema';
 import { appendSecurityAuditLog } from '../../../utils/security-audit-log';
+import { sendEmail } from './helpers/send-email';
 
 function addMinutes(date: Date, minutes: number) {
   const d = new Date(date);
@@ -161,6 +162,22 @@ export default ({ strapi }: { strapi: any }) => ({
     strapi.log.info(
       `[password-reset] codigo gerado para ${maskedEmail}; expira em ${expiresAt.toISOString()}`,
     );
+
+    try {
+      await sendEmail(strapi, {
+        to: email,
+        subject: 'Recicla Online - Código de recuperação de senha',
+        text:
+          `Seu código de recuperação de senha é: ${code}\n\n` +
+          `Ele expira em 10 minutos.`,
+      });
+    } catch (err: any) {
+      strapi.log.error(
+        `[password-reset] falha ao enviar código de recuperação por email: ${String(err?.message || err)}`,
+      );
+      return ctx.internalServerError('Nao foi possivel enviar o codigo de recuperacao por email.');
+    }
+
     try {
       await appendSecurityAuditLog(strapi, {
         eventType: 'password-reset.code.generated',
