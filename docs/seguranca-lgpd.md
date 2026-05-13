@@ -1,108 +1,72 @@
-# Seguranca, Auditoria e LGPD
+# Segurança, Auditoria e LGPD (Status de Implementação)
 
-Escopo: autenticacao, credenciais, recuperacao de senha, criptografia, consentimento e logs.
+Escopo: autenticação, credenciais, recuperação de senha, criptografia, consentimento e logs.
 
-## 1) Autenticacao e gestao de credenciais
+## 1) Autenticação e gestão de credenciais
 
-### Status atual
-- Senhas sao verificadas com `bcryptjs` no login e na troca/exclusao de conta.
-- Senhas sao gravadas com hash bcrypt configuravel por variavel de ambiente.
-- Existe politica de senha forte via validacoes Zod.
-- Existe protecao contra brute force por identificador (email), com bloqueio temporario e atraso progressivo.
-- Fluxo de autenticacao usa 2FA por codigo de email com desafio temporario.
+### Implementado
+- Verificação de senha com `bcryptjs` em login, troca de senha e exclusão de conta.
+- Gravação de senha com hash bcrypt em cadastro/troca/reset.
+- Política de senha forte validada no backend.
+- Proteção de brute-force por identificador com bloqueio temporário e delay progressivo.
+- Login com 2FA por código de e-mail e desafio temporário.
 
-### Parametros de custo do hash
-- Parametro implementado: `PASSWORD_HASH_ROUNDS`.
-- Faixa permitida no backend: 10 a 15 rounds.
-- Valor padrao quando ausente: 12 rounds.
-- Fluxos cobertos: cadastro publico, troca de senha autenticada e reset de senha por token.
+### Observação
+- Regras detalhadas de claims JWT e blacklist em Redis não representam o contrato atual desta base.
 
-### Justificativa tecnica (para documento)
-- Bcrypt foi mantido por ser amplamente adotado para credenciais e resistente a ataques de forca bruta offline.
-- O custo configuravel permite ajuste progressivo sem mudar o codigo-fonte.
-- Faixa 10..15 evita configuracoes fracas e tambem impede custo excessivo com risco de degradacao do servico.
+## 2) Recuperação de senha
 
-## 2) Recuperacao de senha
+### Implementado
+- Fluxo com solicitação de código, validação de código e redefinição final.
+- Registro de eventos de segurança no fluxo de recuperação.
+- Janela de solicitação implementada no código: até 3 por 1 hora.
+- Código de recuperação com expiração curta; após validação, emissão de `resetToken` temporário.
 
-### Status atual
-- Fluxo com codigo de reset, janela de tentativas e token temporario apos validacao.
-- Registro em log adicionado para:
-  - solicitacao recebida (email mascarado)
-  - solicitacao sem usuario elegivel
-  - limite de solicitacoes atingido
-  - codigo gerado e prazo de expiracao
-
-## 3) Criptografia e comunicacao segura
+## 3) Criptografia e comunicação segura
 
 ### Em repouso
-- Dados sensiveis do municipe sao criptografados por lifecycle com AES-256-GCM.
-- CPF usa hash cego HMAC-SHA256 para busca e deduplicacao sem expor texto puro.
+- Campos sensíveis de munícipe protegidos via lifecycle com AES-256-GCM.
+- CPF com hash determinístico (`cpfHash`) para busca/deduplicação sem expor valor original.
 
-### Em transito
-- Middleware global exige HTTPS/TLS em producao.
-- HSTS ativo no middleware de seguranca do Strapi.
+### Em trânsito
+- Middleware global de forçamento de HTTPS.
+- HSTS habilitado na configuração de segurança.
 
 ## 4) Conformidade com LGPD
 
-### Termos e LGPD
-- Termo de uso e base de consentimento podem se sobrepor, mas juridicamente nao sao automaticamente equivalentes.
-- Recomendacao: garantir clausulas explicitas de tratamento de dados (finalidade, base legal, compartilhamento, retencao e direitos do titular).
+### Consentimento
+- Aceite de termos autenticado persistido no perfil do munícipe.
+- Histórico de aceite persistido em `term-list` com versão/documento/timestamp.
+- Revogação de consentimento implementada (`PATCH /auth/onboarding/revoke-terms`).
 
-### Evidencias de minimizacao de dados
-- Campos sensiveis sao protegidos por criptografia em repouso.
-- CPF para consulta interna usa hash cego (`cpfHash`) e evita uso direto do valor em claro para busca.
-- Respostas de autenticacao usam mensagens neutras para reduzir enumeracao de usuario.
+### Minimização de dados
+- Dados sensíveis protegidos em repouso.
+- Uso de hash para CPF em buscas internas.
+- Mensagens de autenticação sem detalhamento excessivo de existência de usuário em parte dos fluxos.
 
-### Revogacao de consentimento
-- Endpoint de revogacao de consentimento implementado (`PATCH /auth/onboarding/revoke-terms`).
-- Revogacao marca aceite como falso e volta o onboarding para `mustAcceptTerms = true`.
-
-### Registro de consentimento (data e versao)
-- Aceite de termos registra:
-  - `acceptedAt`
-  - `acceptedTermDocumentId`
-  - `termsAcceptedAt`
-  - `termsVersionAccepted`
-  - `termsAcceptedTermDocumentId`
-- Historico de auditoria de aceite gravado em `term-list` com `acceptedAt`, `version` e `termDocumentId`.
+### Observação
+- Este documento descreve implementação de software. Aspectos jurídicos de base legal, retenção e direitos do titular devem ser tratados em políticas institucionais e documentação legal.
 
 ## 5) Auditoria e logs
 
-### Logs de autenticacao
-- Tentativas de login (sucesso/falha/bloqueio) registradas em mecanismo de brute force.
-- Sucesso de 2FA registra evento de login e grava `lastLoginAt`, `lastLoginIp`, `lastLoginUserAgent`.
-- Eventos de seguranca sao registrados tambem em trilha de auditoria dedicada com tipo de evento e metadados de contexto.
+### Implementado
+- Registro de eventos de autenticação, 2FA e recuperação de senha em trilha dedicada.
+- Registro de último login (`lastLoginAt`, `lastLoginIp`, `lastLoginUserAgent`) após sucesso do 2FA.
+- Registro de falhas de 2FA (sessão ausente, challenge inválido, código expirado, código incorreto).
+- Integridade de logs com hash encadeado e assinatura HMAC.
+- Bloqueio de alteração/exclusão de audit log por lifecycle.
 
-### Logs de falha de 2FA
-- Falhas sao registradas para:
-  - sessao ausente/expirada
-  - challenge invalido
-  - codigo expirado
-  - codigo incorreto
+### Recomendações operacionais (fora do código)
+- Integração com SIEM externo.
+- Armazenamento WORM/append-only.
+- Controles de acesso administrativos mais restritivos para trilha de auditoria.
 
-### Protecao contra alteracao dos logs
-- Implementado no backend:
-  - Trilha de auditoria de seguranca com encadeamento por hash (`previousHash` + `hash`).
-  - Assinatura HMAC (`signature`) com segredo `AUDIT_LOG_SECRET`.
-  - Bloqueio de alteracao/exclusao por lifecycle (registro imutavel no nivel da aplicacao).
-- Recomendacao adicional de infraestrutura (complementar):
-  - exportacao para SIEM externo;
-  - armazenamento WORM/append-only;
-  - controle de acesso restrito para leitura administrativa.
+## Checklist técnico (factual)
 
-### Exemplo de analise de logs
-- Consultar eventos `password-reset` por periodo e origem.
-- Correlacionar falhas `login-2fa` por usuario/IP para detectar ataques de tentativa.
-- Correlacionar bloqueios de brute force com picos de falha em autenticacao.
+- Autenticação e credenciais: implementado com observações contratuais.
+- Recuperação de senha: implementado com janelas/TTL definidos no código.
+- Criptografia em repouso e TLS/HSTS: implementado.
+- Consentimento e revogação: implementado.
+- Auditoria e proteção de logs: implementado.
 
-## Checklist dos itens solicitados (status final)
-
-- Item 1 (autenticacao e credenciais): COMPLETO.
-  - Parametros de custo do hash configurados: SIM (`PASSWORD_HASH_ROUNDS`).
-  - Justificativas tecnicas documentadas: SIM (nesta secao).
-
-- Item 5 (auditoria e logs): COMPLETO.
-  - Logs de autenticacao registrados: SIM.
-  - Logs de falha 2FA registrados: SIM.
-  - Protecao contra alteracao dos logs: SIM (hash chain + HMAC + bloqueio update/delete em lifecycle).
-  - Exemplo de analise de logs apresentado: SIM.
+Este arquivo substitui classificações absolutas de "completo" por status factual orientado ao código atual.

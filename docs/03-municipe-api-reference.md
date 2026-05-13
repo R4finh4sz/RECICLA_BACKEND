@@ -1,52 +1,78 @@
-# Municipe - Referência de API
+# Municipe - Referência de API (Implementação Atual)
 
-Base URL: https://api.recicla.com.br/api
+Base URL: `/api`  
+Autenticação: `Authorization: Bearer <jwt>` para endpoints protegidos.
 
-Autenticação: Incluir JWT no header Authorization: Bearer <jwt_token>
+## Endpoints públicos (confirmados em rota)
 
-Erros: Retornam com status HTTP apropriado, nome do erro e mensagem em português.
+- `POST /register/municipes`
+  - Cadastro de munícipe com validação de dados e criação do usuário.
 
-## Endpoints Públicos
+- `POST /auth/local`
+  - Início do login com senha e geração de desafio 2FA.
 
-**POST /register/municipes** - Registrar novo municipe. Requer nome, email, password forte, CPF válido e endereço completo. Valida duplicidade de email e CPF. Cria user em users-permissions e municipe com dados encriptados.
+- `POST /auth/local/verify-code`
+  - Valida o código 2FA e retorna JWT.
 
-**POST /auth/local** - Requisitar código 2FA por email. Requer email e password. Valida brute-force, gera code 6-digit, salva challenge e envia por email. Retorna challengeId.
+- `POST /auth/local/resend-code`
+  - Reenvia código do desafio 2FA.
 
-**POST /auth/local/verify-code** - Verificar código 2FA e obter JWT. Requer email, code e challengeId. Valida correspondência, gera JWT com expiração (1 dia ou 30 dias com rememberMe).
+- `POST /auth/request-password-reset`
+  - Solicita recuperação de senha por e-mail.
+  - Implementação atual: limite de 3 solicitações por janela de 1 hora.
 
-**POST /auth/local/resend-code** - Resolicitar código 2FA. Requer email. Rate limited a 5 reenvios por 10 minutos.
+- `POST /auth/password-reset/validate-code`
+  - Valida código de recuperação com corpo `{ email, code }`.
+  - Retorna `resetToken` temporário.
 
-**POST /auth/request-password-reset** - Enviar link de reset para email. Requer email. Rate limited a 3 requisições por 10 minutos. Resposta genérica por segurança.
+- `PATCH /auth/reset-password`
+  - Redefine senha com `resetToken`, `newPassword` e `confirmPassword`.
 
-**POST /auth/password-reset/validate-code** - Validar token de reset. Requer resetToken. Verifica validade (1 hora).
+- `PATCH /auth/onboarding/accept-terms/public`
+  - Endpoint público de validação do termo ativo.
+  - Implementação atual: não registra consentimento nesse endpoint.
 
-**PATCH /auth/reset-password** - Definir nova senha. Requer resetToken, newPassword e confirmPassword. Valida força de password. Revoga todos os tokens existentes após sucesso.
+## Endpoints autenticados (confirmados em rota)
 
-**POST /auth/confirm-email-code** - Confirmar email com código. Requer email e code 6-digit.
+- `GET /auth/onboarding/status`
+  - Retorna pendências de onboarding.
 
-**POST /auth/resend-email-confirmation-code** - Reenviar código de confirmação. Requer email. Rate limited a 5 requisições por 10 minutos.
+- `PATCH /auth/onboarding/accept-terms`
+  - Registra aceite de termos e histórico em `term-list`.
 
-**PATCH /auth/onboarding/accept-terms/public** - Aceitar termos antes de login. Sem parâmetros. Registra aceitação.
+- `PATCH /auth/onboarding/revoke-terms`
+  - Revoga consentimento e reabre pendência de aceite.
 
-## Endpoints Autenticados
+- `PUT /edit-profile/:id`
+  - Atualiza somente os campos permitidos de perfil.
 
-**GET /auth/onboarding/status** - Verificar status de onboarding. Retorna se faltam: perfil, termos ou password.
+- `POST /auth/change-password`
+  - Troca senha do usuário autenticado.
 
-**PATCH /auth/onboarding/accept-terms** - Registrar aceitação de termos. Sem parâmetros. Registra em term-list para auditoria.
+- `POST /auth/delete-account`
+  - Exclui conta com validação de senha atual.
 
-**PATCH /auth/onboarding/revoke-terms** - Revogar consentimento de termos. Sem parâmetros.
+- `POST /auth/logout`
+  - Revoga o token atual em blacklist interna.
 
-**GET /municipes/me** - Obter perfil do usuário logado. Sem parâmetros.
+## Endpoints relacionados ao perfil do usuário
 
-**PUT /edit-profile/:id** - Atualizar perfil. Parâmetro URL: :id do municipe. Pode editar: complemento, endereco, cep, cidade, telefone. Campos imutáveis: nome, cpf, email, dataNascimento, estado.
+- `GET /users/me` (users-permissions)
+  - Endpoint do plugin estendido para incluir dados de perfil do munícipe em `profile`.
+  - Não há rota customizada explícita `GET /municipes/me` em `src/api/municipe/routes/custom-municipe.ts`.
 
-**POST /auth/change-password** - Alterar senha. Requer currentPassword, newPassword e confirmPassword. Valida força de password.
+## Endpoints implementados em service/controller sem rota customizada explícita no módulo
 
-**POST /auth/delete-account** - Deletar conta permanentemente. Requer currentPassword para confirmação de identidade. Remove municipe, user e histórico.
+- Confirmação de e-mail por código.
+- Reenvio de código de confirmação de e-mail.
 
-**POST /auth/logout** - Fazer logout. Sem parâmetros. Revoga token adicionando à blacklist.
+Observação: esses fluxos existem em controller/service do módulo munícipe, mas não constam no arquivo de rotas customizadas desse módulo.
 
-## Fluxo de Uso
+## Fluxo principal implementado
 
-Registro: POST /register/municipes → Login Passo 1: POST /auth/local → Login Passo 2: POST /auth/local/verify-code → Obter JWT → GET /auth/onboarding/status → PUT /edit-profile (se necessário) → PATCH /auth/onboarding/accept-terms → Usar API.
-
+1. `POST /register/municipes`
+2. `POST /auth/local`
+3. `POST /auth/local/verify-code`
+4. `GET /auth/onboarding/status`
+5. `PUT /edit-profile/:id` (se necessário)
+6. `PATCH /auth/onboarding/accept-terms`
