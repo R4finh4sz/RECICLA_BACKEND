@@ -1,42 +1,54 @@
 # Strapi - Visão Geral Técnica
 
-Strapi é um CMS headless baseado em Node.js que oferece uma API escalável e customizável. Diferencia-se de CMS tradicionais por separar completamente a camada de conteúdo da apresentação, entregando dados via REST ou GraphQL.
+Este projeto usa Strapi com API REST, organização por domínios e customização de rotas, serviços e lifecycles.
 
-## Conceitos Centrais
+## Conceitos usados no projeto
 
 ### Content-Types
-Definem a estrutura de dados do sistema. Existem três tipos: Collection Type (coleções de documentos), Single Type (um único documento) e Component (estruturas reutilizáveis).
+- Coleções principais em `src/api/*/content-types/*/schema.json`.
+- Modelos de domínio incluem: municipe, auth-security, first-access-control, termo, term-list, eco-coin, eco-coin-transaction, trade-item, revoked-token, brute-force-attempt, security-audit-log.
 
 ### Document API
-API moderna de Strapi 4+ que oferece operações CRUD para criar, buscar, atualizar e deletar documentos de forma estruturada.
+- Operações CRUD e buscas são executadas majoritariamente via `strapi.documents(...)` nos services.
 
 ### Lifecycle Hooks
-Interceptam operações de banco de dados em diferentes estágios. Os principais hooks são beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDelete, afterFind e afterFindMany. Permitem validação, normalização, criptografia e auditoria.
+- Hooks implementados nos domínios que exigem regra de persistência.
+- Exemplo: criptografia/descriptografia de dados sensíveis do munícipe e imutabilidade lógica de audit log.
 
 ### Controllers
-Camada de entrada HTTP. Validam requisições, chamam serviços correspondentes, formatam respostas HTTP e redirecionam erros.
+- Recebem requisição HTTP e delegam regras para services.
+- Tratam validação de entrada e retornos de erro por contexto.
 
 ### Services
-Implementam a lógica de negócio. Orquestram múltiplas operações, implementam regras de negócio, interagem com Document API e não conhecem contexto HTTP.
+- Contêm a lógica de negócio de autenticação, onboarding, consentimento, recuperação de senha, eco-coin e auditoria.
 
 ### Rotas
-Definem endpoints HTTP mapeando para controllers. Indicam método (GET, POST, etc), caminho, handler e policies aplicáveis.
+- Rotas customizadas por módulo em `src/api/**/routes/*.ts`.
+- Rotas do plugin users-permissions também são estendidas em `src/extensions/users-permissions/strapi-server.ts`.
 
-### Policies
-Middleware customizado para autorização e validação. Determinam se uma requisição pode ou não acessar um recurso.
+### Policies e Middlewares
+- Policy de onboarding: `global::municipe-onboarding-guard`.
+- Middlewares globais relevantes: `global::remove-api-prefix`, `global::force-https`, `global::brute-force-protection`, `global::auth-checker`.
 
-### Middleware Global
-Executado em todas as requisições antes de chegar ao controller. Exemplos: logger, CORS, autenticação, compressão.
+## Fluxo de requisição (implementação atual)
 
-## Fluxo de Requisição
+1. Middlewares globais (logger, segurança, CORS, parsing, proteção).
+2. Resolução de rota.
+3. Execução de policy (quando configurada).
+4. Controller do endpoint.
+5. Service de negócio.
+6. Persistência e hooks de lifecycle.
+7. Resposta HTTP.
 
-Uma requisição passa por: logger, CORS, autenticação, roteamento, policies, controller, service, lifecycle hooks, banco de dados, lifecycle hooks novamente, service, controller e finalmente retorna a resposta HTTP.
+## Benefícios observados nesta base
 
-## Vantagens
+- Separação clara entre rota, controller e service.
+- Segurança com camadas: TLS/HTTPS, HSTS, brute-force, validação, revogação de token.
+- Regras sensíveis centralizadas em services e utilitários.
+- Auditoria de segurança dedicada com trilha de integridade.
 
-Estrutura organizada com separação clara entre camadas. Segurança integrada com middleware, policies e validação. Escalabilidade ao adicionar novos content-types. Auditoria automática via lifecycles. Suporte a criptografia em lifecycles. Admin UI para gerenciar dados.
+## Limitações atuais
 
-## Desvantagens
-
-Overhead de framework em relação ao Express puro. Curva de aprendizado. Documentação em constante evolução.
-
+- Parte dos contratos funcionais está distribuída entre módulo `municipe` e extensão do plugin users-permissions.
+- Há endpoints/handlers implementados em service/controller que não aparecem como rotas customizadas explícitas no mesmo módulo.
+- Há divergências pontuais entre documentação histórica e comportamento real de alguns fluxos (rate limit e detalhes de revogação).
