@@ -665,6 +665,33 @@ export interface ApiFirstAccessControlFirstAccessControl
   };
 }
 
+export interface ApiMasterMaster extends Struct.CollectionTypeSchema {
+  collectionName: 'masters';
+  info: {
+    displayName: 'Master';
+    pluralName: 'masters';
+    singularName: 'master';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::master.master'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
   collectionName: 'municipes';
   info: {
@@ -1417,6 +1444,7 @@ declare module '@strapi/strapi' {
       'api::eco-coin-transaction.eco-coin-transaction': ApiEcoCoinTransactionEcoCoinTransaction;
       'api::eco-coin.eco-coin': ApiEcoCoinEcoCoin;
       'api::first-access-control.first-access-control': ApiFirstAccessControlFirstAccessControl;
+      'api::master.master': ApiMasterMaster;
       'api::municipe.municipe': ApiMunicipeMunicipe;
       'api::revoked-token.revoked-token': ApiRevokedTokenRevokedToken;
       'api::security-audit-log.security-audit-log': ApiSecurityAuditLogSecurityAuditLog;
