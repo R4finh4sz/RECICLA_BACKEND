@@ -14,7 +14,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
     if (!userId) return ctx.unauthorized('Token inválido ou ausente.');
 
-    const roleName = getUserRoleName(ctx);
+    const roleName = await getUserRoleName(ctx, strapi);
     if (roleName !== 'Municipe') return ctx.forbidden('Apenas Municipe.');
 
     if (ctx?.request?.body?.nome !== undefined) return ctx.badRequest('Não é permitido alterar o nome.');

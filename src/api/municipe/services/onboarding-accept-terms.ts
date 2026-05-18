@@ -6,7 +6,7 @@ export default ({ strapi }: { strapi: any }) => ({
     const userId = ctx?.state?.user?.id;
     if (!userId) return ctx.unauthorized("Token inválido ou ausente.");
 
-    const roleName = getUserRoleName(ctx);
+    const roleName = await getUserRoleName(ctx, strapi);
     if (roleName !== "Municipe") return ctx.forbidden("Apenas Municipe.");
 
     // Busca o termo mais recente

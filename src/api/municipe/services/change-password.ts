@@ -17,7 +17,7 @@ export default ({ strapi }: { strapi: any }) => ({
     if (!userId) return ctx.unauthorized('Credenciais inválidas.');
 
     // 2. Valida se o usuário tem o papel correto
-    const roleName = getUserRoleName(ctx);
+    const roleName = await getUserRoleName(ctx, strapi);
     if (roleName !== 'Municipe') return ctx.forbidden('Apenas Municipe.');
 
     // 3. Valida payload (Zod)
