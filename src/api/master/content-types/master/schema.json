@@ -1,0 +1,14 @@
+{
+  "kind": "collectionType",
+  "collectionName": "masters",
+  "info": {
+    "singularName": "master",
+    "pluralName": "masters",
+    "displayName": "Master"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {}
+}
