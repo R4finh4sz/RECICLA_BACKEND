@@ -430,6 +430,30 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiAdminAdmin extends Struct.CollectionTypeSchema {
+  collectionName: 'admins';
+  info: {
+    displayName: 'Admin';
+    pluralName: 'admins';
+    singularName: 'admin';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::admin.admin'> &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiAuthSecurityAuthSecurity
   extends Struct.CollectionTypeSchema {
   collectionName: 'auth_securities';
@@ -662,6 +686,33 @@ export interface ApiFirstAccessControlFirstAccessControl
       'oneToOne',
       'plugin::users-permissions.user'
     >;
+  };
+}
+
+export interface ApiMasterMaster extends Struct.CollectionTypeSchema {
+  collectionName: 'masters';
+  info: {
+    displayName: 'Master';
+    pluralName: 'masters';
+    singularName: 'master';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::master.master'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -1412,11 +1463,13 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::admin.admin': ApiAdminAdmin;
       'api::auth-security.auth-security': ApiAuthSecurityAuthSecurity;
       'api::brute-force-attempt.brute-force-attempt': ApiBruteForceAttemptBruteForceAttempt;
       'api::eco-coin-transaction.eco-coin-transaction': ApiEcoCoinTransactionEcoCoinTransaction;
       'api::eco-coin.eco-coin': ApiEcoCoinEcoCoin;
       'api::first-access-control.first-access-control': ApiFirstAccessControlFirstAccessControl;
+      'api::master.master': ApiMasterMaster;
       'api::municipe.municipe': ApiMunicipeMunicipe;
       'api::revoked-token.revoked-token': ApiRevokedTokenRevokedToken;
       'api::security-audit-log.security-audit-log': ApiSecurityAuditLogSecurityAuditLog;
