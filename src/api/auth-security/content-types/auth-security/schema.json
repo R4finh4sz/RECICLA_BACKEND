@@ -36,6 +36,8 @@
 
     "lastLoginAt": { "type": "datetime" },
     "lastLoginIp": { "type": "string" },
-    "lastLoginUserAgent": { "type": "text" }
+    "lastLoginUserAgent": { "type": "text" },
+
+    "tokenInvalidBefore": { "type": "datetime" }
   }
 }
