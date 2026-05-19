@@ -1,21 +1,46 @@
-// Service do módulo Municipe: implementa regras de negócio para gestão do perfil e dados do Municipe.
+// Resolvedor de role do usuário autenticado, com fallback ao banco quando o JWT
+// não traz a role populada com nome.
 
-export function getUserRoleName(ctx: any) {
-  const role = ctx?.state?.user?.role;
+export async function getUserRoleName(ctx: any, strapi?: any) {
+  const user = ctx?.state?.user;
+  const role = user?.role;
 
-  if (!role) return null;
+  if (!role) {
+    return null;
+  }
 
-  // role pode ser string
-  if (typeof role === 'string') return role;
+  if (typeof role === 'string') {
+    return role;
+  }
 
-  // role pode ser objeto com name
-  if (typeof role === 'object' && role?.name) return role.name;
+  if (typeof role === 'object' && role?.name) {
+    return role.name;
+  }
 
-  // role pode ser id numérico
-  if (typeof role === 'number') return String(role);
+  if (strapi && user?.id != null) {
+    const dbUser = await strapi.db.query('plugin::users-permissions.user').findOne({
+      where: { id: user.id as any },
+      populate: ['role'],
+    });
 
-  // role pode ser objeto com id
-  if (typeof role === 'object' && role?.id != null) return String(role.id);
+    const dbRoleName = (dbUser as any)?.role?.name;
+    if (dbRoleName) {
+      return dbRoleName;
+    }
+
+    const dbRoleType = (dbUser as any)?.role?.type;
+    if (dbRoleType) {
+      return dbRoleType;
+    }
+  }
+
+  if (typeof role === 'number') {
+    return String(role);
+  }
+
+  if (typeof role === 'object' && role?.id != null) {
+    return String(role.id);
+  }
 
   return null;
 }

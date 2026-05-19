@@ -4,7 +4,7 @@
 import { z } from 'zod';
 
 export const MunicipeLoginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
   rememberMe: z.boolean().optional().default(false),
 });

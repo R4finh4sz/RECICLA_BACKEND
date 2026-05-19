@@ -7,6 +7,7 @@ import { ChangePasswordSchema, ChangePasswordInput } from '../validation/ChangeP
 import { getUserRoleName } from './helpers/get-user-role-name';
 import { deriveSaltFromUser } from './helpers/derive-salt';
 import { hashPassword } from '../../../utils/password-hash';
+import { TokenRevocationService } from './token-revocation.service';
 
 // Exporta o handler principal do módulo Municipe.
 export default ({ strapi }: { strapi: any }) => ({
@@ -17,7 +18,7 @@ export default ({ strapi }: { strapi: any }) => ({
     if (!userId) return ctx.unauthorized('Credenciais inválidas.');
 
     // 2. Valida se o usuário tem o papel correto
-    const roleName = getUserRoleName(ctx);
+    const roleName = await getUserRoleName(ctx, strapi);
     if (roleName !== 'Municipe') return ctx.forbidden('Apenas Municipe.');
 
     // 3. Valida payload (Zod)
@@ -79,7 +80,39 @@ export default ({ strapi }: { strapi: any }) => ({
       data: { password: passwordHash },
     });
 
-    // 9. Retorna sucesso: padrão
+    // 9. Invalida tokens: atualiza auth-security.tokenInvalidBefore e revoga token atual
+    try {
+      const now = new Date().toISOString();
+      const authSec = await strapi.documents('api::auth-security.auth-security').findFirst({
+        filters: { user: { id: userId as any } },
+      });
+
+      if (authSec) {
+        await strapi.documents('api::auth-security.auth-security').update({
+          documentId: String((authSec as any).documentId || (authSec as any).id),
+          data: { tokenInvalidBefore: now },
+        });
+      } else {
+        await strapi.documents('api::auth-security.auth-security').create({
+          data: { user: userId, tokenInvalidBefore: now },
+        });
+      }
+
+      const authHeader = String(ctx?.request?.header?.authorization || '');
+      if (authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7).trim();
+        if (token) {
+          const revocationService = new TokenRevocationService(strapi);
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 2);
+          await revocationService.revoke(token, expiresAt);
+        }
+      }
+    } catch (err) {
+      strapi.log.error('[change-password] falha ao invalidar tokens apos troca de senha', err);
+    }
+
+    // 10. Retorna sucesso: padrão
     return { changed: true };
   },
 });

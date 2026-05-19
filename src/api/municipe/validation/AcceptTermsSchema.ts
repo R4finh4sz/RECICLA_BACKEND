@@ -3,9 +3,12 @@
 
 import { z } from "zod";
 
-export const AcceptTermsSchema = z.object({
-  version: z.string().min(1),
-  documentId: z.string().min(1),
-});
+// Permite body vazio — caso nenhum campo seja enviado, o serviço usa o termo ativo.
+export const AcceptTermsSchema = z
+  .object({
+    version: z.string(),
+    documentId: z.string(),
+  })
+  .partial();
 
 export type AcceptTermsInput = z.infer<typeof AcceptTermsSchema>;

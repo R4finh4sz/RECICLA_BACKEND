@@ -17,8 +17,7 @@
     },
     "cpf": {
       "type": "string",
-      "required": true,
-      "unique": true
+      "required": true
     },
     "cpfHash": {
       "type": "string",
@@ -33,6 +32,12 @@
     "telefone": {
       "type": "string",
       "required": true
+    },
+    "telefoneHash": {
+      "type": "string",
+      "unique": true,
+      "private": true,
+      "description": "Hash cego do telefone para busca/duplicidade sem expor o valor em texto puro"
     },
     "cep": {
       "type": "string",

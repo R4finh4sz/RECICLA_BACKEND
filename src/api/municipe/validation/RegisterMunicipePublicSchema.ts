@@ -70,7 +70,7 @@ export const RegisterMunicipePublicSchema = z
       .refine(isValidFullName, {
         message: "Nome completo inválido. Use apenas letras e espaços.",
       }),
-    email: z.string().email("E-mail inválido"),
+    email: z.string().trim().toLowerCase().email("E-mail inválido"),
     username: z.string().min(3).optional(),
     password: z
       .string()

@@ -66,6 +66,8 @@ export default ({ strapi }: { strapi: any }) => ({
     const email = normalizeEmail(data.email);
     const cpf = normalizeCpf(data.cpf);
     const cpfHash = buildSensitiveLookupHash(cpf);
+    const telefone = normalizeTelefone(data.telefone);
+    const telefoneHash = buildSensitiveLookupHash(telefone);
 
     const existingUser = await strapi
       .documents("plugin::users-permissions.user")
@@ -86,6 +88,17 @@ export default ({ strapi }: { strapi: any }) => ({
       });
 
     if (existingMunicipeByCpf) return ctx.badRequest("CPF já cadastrado.");
+
+    const existingMunicipeByTelefone = await strapi
+      .documents("api::municipe.municipe")
+      .findFirst({
+        filters: {
+          $or: [{ telefoneHash }, { telefone }],
+        },
+        fields: ["id", "telefoneHash", "telefone"],
+      });
+
+    if (existingMunicipeByTelefone) return ctx.badRequest("Telefone já cadastrado.");
 
     const cepClean = normalizeCep(data.cep);
 
@@ -114,7 +127,7 @@ export default ({ strapi }: { strapi: any }) => ({
           nome: data.nome,
           cpf,
           dataNascimento: toDateOnlyString(new Date(data.dataNascimento)),
-          telefone: normalizeTelefone(data.telefone),
+          telefone,
           cep: cepClean,
           endereco: data.endereco,
           numero: data.numero,

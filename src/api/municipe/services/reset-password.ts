@@ -60,6 +60,39 @@ export default ({ strapi }: { strapi: any }) => ({
       },
     });
 
+    // Invalida tokens: atualiza auth-security.tokenInvalidBefore e revoga token atual
+    try {
+      const now = new Date().toISOString();
+      const authSec = await strapi.documents('api::auth-security.auth-security').findFirst({
+        filters: { user: { id: userId as any } },
+      });
+
+      if (authSec) {
+        await strapi.documents('api::auth-security.auth-security').update({
+          documentId: String((authSec as any).documentId || (authSec as any).id),
+          data: { tokenInvalidBefore: now },
+        });
+      } else {
+        await strapi.documents('api::auth-security.auth-security').create({
+          data: { user: userId, tokenInvalidBefore: now },
+        });
+      }
+
+      const authHeader = String(ctx?.request?.header?.authorization || '');
+      if (authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7).trim();
+        if (token) {
+          const { TokenRevocationService } = await import('./token-revocation.service.js');
+          const revocationService = new TokenRevocationService(strapi);
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 2);
+          await revocationService.revoke(token, expiresAt);
+        }
+      }
+    } catch (err) {
+      strapi.log.error('[reset-password] falha ao invalidar tokens apos reset de senha', err);
+    }
+
     return { success: true, message: 'Senha alterada com sucesso.' };
   },
 });

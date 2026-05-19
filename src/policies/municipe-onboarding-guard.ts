@@ -1,26 +1,42 @@
+import { getUserRoleName } from '../api/municipe/services/helpers/get-user-role-name';
+
 export default async (policyContext: any, _config: any, { strapi }: any) => {
   const ctx = policyContext;
 
   const user = ctx.state.user;
   if (!user) return false;
 
-  const roleName = user?.role?.name || user?.role;
+  const roleName = await getUserRoleName(ctx, strapi);
   if (roleName !== 'Municipe') return false;
 
   // Rotas liberadas durante onboarding
   const method = (ctx.request.method || '').toUpperCase();
-  const path = ctx.request.path || '';
+  const path = String(ctx.request.path || '').replace(/^\/api\b/, '');
 
-  const allowlist = new Set([
+  // Allowlist com suporte a parâmetros (ex: :id) e prefixo /api
+  const allowlist = [
     'GET /auth/onboarding/status',
     'PATCH /auth/onboarding/accept-terms',
+    'PATCH /auth/onboarding/revoke-terms',
     'POST /auth/first-access',
     'GET /municipes/me',
     'PUT /municipes/me',
-  ]);
+  ];
 
-  if (allowlist.has(`${method} ${path}`)) {
-    return true;
+  const requestKey = `${method} ${path}`;
+
+  const matchesAllowed = (allowedEntry: string, reqKey: string) => {
+    const [allowedMethod, allowedPath] = allowedEntry.split(' ');
+    if (!allowedMethod || !allowedPath) return false;
+    if (allowedMethod !== method) return false;
+
+    const escaped = allowedPath.replace(/:[^/]+/g, '[^/]+');
+    const patterns = [`^${escaped}$`, `^/api${escaped}$`];
+    return patterns.some((p) => new RegExp(p).test(path));
+  };
+
+  for (const a of allowlist) {
+    if (matchesAllowed(a, requestKey)) return true;
   }
 
   // Busca first-access-control do usuário
