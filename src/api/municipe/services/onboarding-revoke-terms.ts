@@ -17,6 +17,36 @@ export default ({ strapi }: { strapi: any }) => ({
 
     if (!municipe) return ctx.notFound("Municipe nao encontrado.");
 
+    const fac = await strapi
+      .documents("api::first-access-control.first-access-control")
+      .findFirst({
+        filters: { user: { id: userId } },
+        fields: ["documentId", "id", "termsAcceptedTermDocumentId", "mustAcceptTerms"],
+      });
+
+    const termDocumentIdToRevoke =
+      ((fac as any)?.termsAcceptedTermDocumentId as any) ||
+      ((municipe as any).acceptedTermDocumentId as any);
+
+    if (!termDocumentIdToRevoke || (fac as any)?.mustAcceptTerms) {
+      return ctx.badRequest("Consentimento já revogado para este termo.");
+    }
+
+    const activeAcceptance = await strapi
+      .documents("api::term-list.term-list")
+      .findFirst({
+        filters: {
+          user: { id: userId as any },
+          termDocumentId: termDocumentIdToRevoke,
+          revoked: false,
+        },
+        fields: ["documentId", "id"],
+      });
+
+    if (!activeAcceptance) {
+      return ctx.badRequest("Consentimento já revogado para este termo.");
+    }
+
     await strapi.documents("api::municipe.municipe").update({
       documentId: String((municipe as any).documentId || (municipe as any).id),
       data: {
@@ -25,13 +55,6 @@ export default ({ strapi }: { strapi: any }) => ({
         acceptedTermDocumentId: null,
       },
     });
-
-    const fac = await strapi
-      .documents("api::first-access-control.first-access-control")
-      .findFirst({
-        filters: { user: { id: userId } },
-        fields: ["documentId", "id"],
-      });
 
     if (fac) {
       await strapi
@@ -49,24 +72,18 @@ export default ({ strapi }: { strapi: any }) => ({
 
     // Marca o(s) registro(s) em term-list como revogados para impedir acesso
     // e permitir aceitação somente após atualização do termo.
-    const termDocumentIdToRevoke =
-      (fac && ((fac as any).termsAcceptedTermDocumentId as any)) ||
-      ((municipe as any).acceptedTermDocumentId as any);
+    const existing = await strapi
+      .documents("api::term-list.term-list")
+      .findMany({
+        filters: { user: { id: userId as any }, termDocumentId: termDocumentIdToRevoke },
+        fields: ["documentId", "id"],
+      });
 
-    if (termDocumentIdToRevoke) {
-      const existing = await strapi
-        .documents("api::term-list.term-list")
-        .findMany({
-          filters: { user: { id: userId as any }, termDocumentId: termDocumentIdToRevoke },
-          fields: ["documentId", "id"],
-        });
-
-      for (const rec of existing || []) {
-        await strapi.documents("api::term-list.term-list").update({
-          documentId: String((rec as any).documentId || (rec as any).id),
-          data: { revoked: true },
-        });
-      }
+    for (const rec of existing || []) {
+      await strapi.documents("api::term-list.term-list").update({
+        documentId: String((rec as any).documentId || (rec as any).id),
+        data: { revoked: true },
+      });
     }
 
     strapi.log.warn(`[terms-consent] revogacao registrada userId=${userId}`);

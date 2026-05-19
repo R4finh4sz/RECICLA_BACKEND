@@ -818,6 +818,7 @@ export interface ApiTermListTermList extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    revoked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     termDocumentId: Schema.Attribute.String & Schema.Attribute.Required;
     termo: Schema.Attribute.Relation<'manyToOne', 'api::termo.termo'>;
     updatedAt: Schema.Attribute.DateTime;

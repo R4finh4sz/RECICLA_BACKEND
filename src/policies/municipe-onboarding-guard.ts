@@ -11,13 +11,7 @@ export default async (policyContext: any, _config: any, { strapi }: any) => {
 
   // Rotas liberadas durante onboarding
   const method = (ctx.request.method || '').toUpperCase();
-<<<<<<< Updated upstream
   const path = String(ctx.request.path || '').replace(/^\/api\b/, '');
-=======
-  // Normaliza path removendo prefixo /api quando presente
-  const rawPath = ctx.request.path || '';
-  const path = rawPath.startsWith('/api/') ? rawPath.replace(/^\/api/, '') : rawPath;
->>>>>>> Stashed changes
 
   const allowlist = new Set([
     'GET /auth/onboarding/status',
