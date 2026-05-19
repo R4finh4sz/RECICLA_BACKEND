@@ -1,9 +1,25 @@
 import { getUserRoleName } from "./helpers/get-user-role-name";
+import { appendSecurityAuditLog } from '../../../utils/security-audit-log';
+import { TokenRevocationService } from './token-revocation.service';
+
+function getClientIp(ctx: any) {
+  const xf = String(ctx?.request?.header?.['x-forwarded-for'] || '');
+  if (xf) return xf.split(',')[0].trim();
+  return String(ctx?.request?.ip || ctx?.ip || 'unknown');
+}
 
 export default ({ strapi }: { strapi: any }) => ({
   async execute(ctx: any) {
     const userId = ctx?.state?.user?.id;
     if (!userId) return ctx.unauthorized("Token invalido ou ausente.");
+
+    const authHeader = ctx?.request?.header?.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return ctx.unauthorized('Token invalido ou ausente.');
+    }
+
+    const token = authHeader.split(' ')[1];
+    const revocationService = new TokenRevocationService(strapi);
 
     const roleName = await getUserRoleName(ctx, strapi);
     if (roleName !== "Municipe") return ctx.forbidden("Apenas Municipe.");
@@ -82,8 +98,35 @@ export default ({ strapi }: { strapi: any }) => ({
     for (const rec of existing || []) {
       await strapi.documents("api::term-list.term-list").update({
         documentId: String((rec as any).documentId || (rec as any).id),
-        data: { revoked: true },
+        data: {
+          revoked: true,
+          revokedAt: new Date().toISOString(),
+          revokedByUserId: String(userId),
+          revokedReason: 'Revogacao solicitada pelo proprio municipe.',
+        },
       });
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 2);
+    await revocationService.revoke(token, expiresAt);
+
+    try {
+      await appendSecurityAuditLog(strapi, {
+        eventType: 'terms.revoked',
+        level: 'warn',
+        message: 'Revogacao de termo registrada.',
+        userId,
+        userEmailMasked: String(ctx?.state?.user?.email || '').replace(/^(.{2}).*(@.*)$/, '$1***$2') || null,
+        ip: getClientIp(ctx),
+        userAgent: String(ctx?.request?.header?.['user-agent'] || ''),
+        metadata: {
+          termDocumentId: termDocumentIdToRevoke,
+          revokedAt: new Date().toISOString(),
+        },
+      });
+    } catch (err: any) {
+      strapi.log.error(`[terms-consent] falha ao auditar revogacao: ${String(err?.message || err)}`);
     }
 
     strapi.log.warn(`[terms-consent] revogacao registrada userId=${userId}`);
