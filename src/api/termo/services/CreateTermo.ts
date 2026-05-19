@@ -5,6 +5,11 @@ const { ApplicationError } = errors;
 class CreateTermo {
   async execute(ctx: any) {
     try {
+      const roleName = ctx?.state?.user?.role?.name || ctx?.state?.user?.role;
+      if (roleName !== 'Master') {
+        throw new ApplicationError('Apenas Master pode criar termos.');
+      }
+
       const data = ctx.request.body?.data || ctx.request.body;
       if (!data) throw new ApplicationError('Body inválido.');
 

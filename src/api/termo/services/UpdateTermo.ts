@@ -5,6 +5,11 @@ const { ApplicationError } = errors;
 class UpdateTermo {
   async execute(ctx: any) {
     try {
+      const roleName = ctx?.state?.user?.role?.name || ctx?.state?.user?.role;
+      if (roleName !== 'Master') {
+        throw new ApplicationError('Apenas Master pode atualizar termos.');
+      }
+
       const documentId = ctx.params?.id;
       if (!documentId) throw new ApplicationError('documentId ausente na rota.');
 

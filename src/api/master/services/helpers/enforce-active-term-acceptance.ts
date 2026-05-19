@@ -1,0 +1,42 @@
+// Service do módulo Master: implementa regras de negócio para gestão do perfil e dados do Master.
+
+export async function enforceActiveTermAcceptance(strapi: any, fac: any) {
+  // Chamando o serviço pelo container do Strapi
+  const termo = await strapi.service("api::termo.get-active-termo").execute();
+
+  // Se não existe termo ativo, força aceite pendente
+  if (!termo) {
+    (fac as any).mustAcceptTerms = true;
+    return { fac, termo: null };
+  }
+
+  const acceptedVersion = (fac as any).termsVersionAccepted ?? null;
+  const acceptedTermDocumentId =
+    (fac as any).termsAcceptedTermDocumentId ?? null;
+  const mustAcceptTerms = Boolean((fac as any).mustAcceptTerms);
+
+  const needsReaccept =
+    acceptedVersion !== (termo as any).version ||
+    acceptedTermDocumentId !==
+      String((termo as any).documentId || (termo as any).id);
+
+  // Se termo mudou e não está marcado como pendente, marca como pendente
+  if (needsReaccept && !mustAcceptTerms) {
+    const facId = String((fac as any).documentId || (fac as any).id);
+
+    await strapi
+      .documents("api::first-access-control.first-access-control")
+      .update({
+        documentId: facId,
+        data: {
+          mustAcceptTerms: true,
+          termsAcceptedAt: null,
+        },
+      });
+
+    (fac as any).mustAcceptTerms = true;
+    (fac as any).termsAcceptedAt = null;
+  }
+
+  return { fac, termo };
+}
