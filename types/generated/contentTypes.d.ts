@@ -473,6 +473,7 @@ export interface ApiAuthSecurityAuthSecurity
       Schema.Attribute.DefaultTo<0>;
     passwordResetRequestsWindowStart: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
+    tokenInvalidBefore: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -676,19 +677,44 @@ export interface ApiMasterMaster extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    acceptedAt: Schema.Attribute.DateTime;
+    acceptedTermDocumentId: Schema.Attribute.String;
+    acceptedTerms: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    cep: Schema.Attribute.String & Schema.Attribute.Required;
+    cidade: Schema.Attribute.String & Schema.Attribute.Required;
+    complemento: Schema.Attribute.String;
+    cpf: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    cpfHash: Schema.Attribute.String &
+      Schema.Attribute.Private &
+      Schema.Attribute.Unique;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    dataNascimento: Schema.Attribute.Date & Schema.Attribute.Required;
+    endereco: Schema.Attribute.String & Schema.Attribute.Required;
+    estado: Schema.Attribute.String & Schema.Attribute.Required;
+    imagemUrl: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::master.master'
     > &
       Schema.Attribute.Private;
+    nome: Schema.Attribute.String & Schema.Attribute.Required;
+    numero: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    telefone: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
