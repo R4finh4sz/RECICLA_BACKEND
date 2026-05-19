@@ -12,7 +12,7 @@ export default ({ strapi }: { strapi: any }) => ({
       .documents("api::municipe.municipe")
       .findFirst({
         filters: { user: { id: userId } },
-        fields: ["documentId", "id"],
+        fields: ["documentId", "id", "acceptedTermDocumentId"],
       });
 
     if (!municipe) return ctx.notFound("Municipe nao encontrado.");
@@ -45,6 +45,28 @@ export default ({ strapi }: { strapi: any }) => ({
             termsAcceptedTermDocumentId: null,
           },
         });
+    }
+
+    // Marca o(s) registro(s) em term-list como revogados para impedir acesso
+    // e permitir aceitação somente após atualização do termo.
+    const termDocumentIdToRevoke =
+      (fac && ((fac as any).termsAcceptedTermDocumentId as any)) ||
+      ((municipe as any).acceptedTermDocumentId as any);
+
+    if (termDocumentIdToRevoke) {
+      const existing = await strapi
+        .documents("api::term-list.term-list")
+        .findMany({
+          filters: { user: { id: userId as any }, termDocumentId: termDocumentIdToRevoke },
+          fields: ["documentId", "id"],
+        });
+
+      for (const rec of existing || []) {
+        await strapi.documents("api::term-list.term-list").update({
+          documentId: String((rec as any).documentId || (rec as any).id),
+          data: { revoked: true },
+        });
+      }
     }
 
     strapi.log.warn(`[terms-consent] revogacao registrada userId=${userId}`);

@@ -27,6 +27,41 @@ export default ({ strapi }: { strapi: any }) => ({
 
     if (!municipe) return ctx.notFound("Municipe não encontrado.");
 
+    // Verifica se o usuário já aceitou este mesmo termo.
+    // Primeiro tenta por relação `termo` (id), que é mais estável; se não existir, busca por `termDocumentId`.
+    let existingAcceptance = null;
+    const termoId = (termo as any).id;
+
+    if (termoId) {
+      existingAcceptance = await strapi.documents("api::term-list.term-list").findFirst({
+        filters: {
+          user: { id: userId as any },
+          termo: { id: termoId as any },
+          revoked: false,
+        },
+        fields: ["id"],
+      });
+    }
+
+    if (!existingAcceptance) {
+      existingAcceptance = await strapi
+        .documents("api::term-list.term-list")
+        .findFirst({
+          filters: {
+            user: { id: userId as any },
+            termDocumentId: termoDocumentId,
+            revoked: false,
+          },
+          fields: ["id"],
+        });
+    }
+
+    if (existingAcceptance) {
+      return ctx.badRequest(
+        "Este termo já foi aceito por este usuário. Novo aceite somente após atualização do termo.",
+      );
+    }
+
     await strapi.documents("api::municipe.municipe").update({
       documentId: municipe.documentId,
       data: {

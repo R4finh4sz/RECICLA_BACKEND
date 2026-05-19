@@ -36,5 +36,10 @@
       "type": "datetime",
       "required": true
     }
+    ,
+    "revoked": {
+      "type": "boolean",
+      "default": false
+    }
   }
 }
