@@ -1,0 +1,83 @@
+{
+  "kind": "collectionType",
+  "collectionName": "masters",
+  "info": {
+    "singularName": "master",
+    "pluralName": "masters",
+    "displayName": "Master"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "nome": {
+      "type": "string",
+      "required": true
+    },
+    "cpf": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "cpfHash": {
+      "type": "string",
+      "unique": true,
+      "private": true,
+      "description": "Hash cego do CPF para busca/duplicidade sem expor o valor em texto puro"
+    },
+    "dataNascimento": {
+      "type": "date",
+      "required": true
+    },
+    "telefone": {
+      "type": "string",
+      "required": true
+    },
+    "cep": {
+      "type": "string",
+      "required": true
+    },
+    "endereco": {
+      "type": "string",
+      "required": true
+    },
+    "numero": {
+      "type": "string",
+      "required": true
+    },
+    "complemento": {
+      "type": "string"
+    },
+    "imagemUrl": {
+      "type": "string"
+    },
+    "cidade": {
+      "type": "string",
+      "required": true
+    },
+    "estado": {
+      "type": "string",
+      "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "acceptedTerms": {
+      "type": "boolean",
+      "default": false,
+      "required": true,
+      "description": "Indica se o master aceitou o termo atualmente ativo"
+    },
+    "acceptedTermDocumentId": {
+      "type": "string",
+      "description": "documentId do termo que o usuário aceitou (opcional)"
+    },
+    "acceptedAt": {
+      "type": "datetime",
+      "description": "Timestamp da aceitação (opcional)"
+    }
+  }
+}
