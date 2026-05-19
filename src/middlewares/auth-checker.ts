@@ -5,6 +5,11 @@ export default (config, { strapi }: { strapi: Core.Strapi }) => {
   const revocationService = new TokenRevocationService(strapi);
 
   return async (ctx, next) => {
+    if (String(ctx.path || '').startsWith('/admin')) {
+      await next();
+      return;
+    }
+
     const authHeader = ctx.request.header.authorization;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
