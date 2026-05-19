@@ -35,11 +35,19 @@
     "acceptedAt": {
       "type": "datetime",
       "required": true
-    }
-    ,
+    },
     "revoked": {
       "type": "boolean",
       "default": false
+    },
+    "revokedAt": {
+      "type": "datetime"
+    },
+    "revokedByUserId": {
+      "type": "string"
+    },
+    "revokedReason": {
+      "type": "text"
     }
   }
 }

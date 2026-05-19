@@ -1,5 +1,12 @@
 // Este service trata o aceite de termos pelo usuário do tipo Municipe de forma simples.
 import { getUserRoleName } from "./helpers/get-user-role-name";
+import { appendSecurityAuditLog } from '../../../utils/security-audit-log';
+
+function getClientIp(ctx: any) {
+  const xf = String(ctx?.request?.header?.['x-forwarded-for'] || '');
+  if (xf) return xf.split(',')[0].trim();
+  return String(ctx?.request?.ip || ctx?.ip || 'unknown');
+}
 
 export default ({ strapi }: { strapi: any }) => ({
   async execute(ctx: any) {
@@ -113,8 +120,31 @@ export default ({ strapi }: { strapi: any }) => ({
         version: termoVersion,
         termDocumentId: termoDocumentId,
         acceptedAt,
+        revoked: false,
+        revokedAt: null,
+        revokedByUserId: null,
+        revokedReason: null,
       },
     });
+
+    try {
+      await appendSecurityAuditLog(strapi, {
+        eventType: 'terms.accepted',
+        level: 'info',
+        message: 'Aceite de termo registrado.',
+        userId,
+        userEmailMasked: String(ctx?.state?.user?.email || '').replace(/^(.{2}).*(@.*)$/, '$1***$2') || null,
+        ip: getClientIp(ctx),
+        userAgent: String(ctx?.request?.header?.['user-agent'] || ''),
+        metadata: {
+          version: termoVersion,
+          termDocumentId: termoDocumentId,
+          acceptedAt,
+        },
+      });
+    } catch (err: any) {
+      strapi.log.error(`[terms-consent] falha ao auditar aceite: ${String(err?.message || err)}`);
+    }
 
     strapi.log.info(
       `[terms-consent] aceite registrado userId=${userId} version=${termoVersion} termDocumentId=${termoDocumentId}`,
