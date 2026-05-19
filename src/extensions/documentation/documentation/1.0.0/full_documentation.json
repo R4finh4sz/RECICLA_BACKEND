@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-05-19T03:41:16.118Z"
+    "x-generation-date": "2026-05-19T04:07:19.666Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -9961,6 +9961,9 @@
           "telefone": {
             "type": "string"
           },
+          "telefoneHash": {
+            "type": "string"
+          },
           "cep": {
             "type": "string"
           },
@@ -10766,6 +10769,9 @@
                 "telefone": {
                   "type": "string"
                 },
+                "telefoneHash": {
+                  "type": "string"
+                },
                 "cep": {
                   "type": "string"
                 },
@@ -10951,6 +10957,16 @@
               },
               "revoked": {
                 "type": "boolean"
+              },
+              "revokedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "revokedByUserId": {
+                "type": "string"
+              },
+              "revokedReason": {
+                "type": "string"
               },
               "locale": {
                 "type": "string"
@@ -11827,6 +11843,16 @@
           "revoked": {
             "type": "boolean"
           },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revokedByUserId": {
+            "type": "string"
+          },
+          "revokedReason": {
+            "type": "string"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -11944,6 +11970,16 @@
                 },
                 "revoked": {
                   "type": "boolean"
+                },
+                "revokedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "revokedByUserId": {
+                  "type": "string"
+                },
+                "revokedReason": {
+                  "type": "string"
                 },
                 "createdAt": {
                   "type": "string",

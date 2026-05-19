@@ -684,9 +684,7 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     cep: Schema.Attribute.String & Schema.Attribute.Required;
     cidade: Schema.Attribute.String & Schema.Attribute.Required;
     complemento: Schema.Attribute.String;
-    cpf: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
+    cpf: Schema.Attribute.String & Schema.Attribute.Required;
     cpfHash: Schema.Attribute.String &
       Schema.Attribute.Private &
       Schema.Attribute.Unique;
@@ -707,6 +705,9 @@ export interface ApiMunicipeMunicipe extends Struct.CollectionTypeSchema {
     numero: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     telefone: Schema.Attribute.String & Schema.Attribute.Required;
+    telefoneHash: Schema.Attribute.String &
+      Schema.Attribute.Private &
+      Schema.Attribute.Unique;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -819,6 +820,9 @@ export interface ApiTermListTermList extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     revoked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    revokedAt: Schema.Attribute.DateTime;
+    revokedByUserId: Schema.Attribute.String;
+    revokedReason: Schema.Attribute.Text;
     termDocumentId: Schema.Attribute.String & Schema.Attribute.Required;
     termo: Schema.Attribute.Relation<'manyToOne', 'api::termo.termo'>;
     updatedAt: Schema.Attribute.DateTime;

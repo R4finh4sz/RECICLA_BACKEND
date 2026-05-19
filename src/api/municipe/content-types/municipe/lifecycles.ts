@@ -8,6 +8,10 @@ function onlyDigits(v: unknown) {
   return String(v ?? "").replace(/\D/g, "");
 }
 
+function normalizeEmail(v: unknown) {
+  return String(v ?? "").trim().toLowerCase();
+}
+
 function normalizeFullName(nome: unknown) {
   return String(nome ?? "")
     .trim()
@@ -28,6 +32,12 @@ function protectWriteData(data: Record<string, unknown>) {
     const normalizedCpf = onlyDigits(data.cpf);
     data.cpf = normalizedCpf;
     data.cpfHash = buildSensitiveLookupHash(normalizedCpf);
+  }
+
+  if (data.telefone != null) {
+    const normalizedTelefone = onlyDigits(data.telefone);
+    data.telefone = normalizedTelefone;
+    data.telefoneHash = buildSensitiveLookupHash(normalizedTelefone);
   }
 
   for (const field of ENCRYPTED_FIELDS) {
@@ -61,6 +71,11 @@ export default {
     if (data.cpf != null) data.cpf = onlyDigits(data.cpf);
     if (data.cep != null) data.cep = onlyDigits(data.cep);
     if (data.telefone != null) data.telefone = onlyDigits(data.telefone);
+    if (data.cidade != null) data.cidade = normalizeFullName(data.cidade);
+    if (data.estado != null) data.estado = normalizeFullName(data.estado);
+    if (data.endereco != null) data.endereco = normalizeFullName(data.endereco);
+    if (data.numero != null) data.numero = String(data.numero).trim();
+    if (data.complemento != null) data.complemento = String(data.complemento).trim();
 
     protectWriteData(data);
 
@@ -76,6 +91,11 @@ export default {
     if (data.cpf != null) data.cpf = onlyDigits(data.cpf);
     if (data.cep != null) data.cep = onlyDigits(data.cep);
     if (data.telefone != null) data.telefone = onlyDigits(data.telefone);
+    if (data.cidade != null) data.cidade = normalizeFullName(data.cidade);
+    if (data.estado != null) data.estado = normalizeFullName(data.estado);
+    if (data.endereco != null) data.endereco = normalizeFullName(data.endereco);
+    if (data.numero != null) data.numero = String(data.numero).trim();
+    if (data.complemento != null) data.complemento = String(data.complemento).trim();
 
     protectWriteData(data);
 
