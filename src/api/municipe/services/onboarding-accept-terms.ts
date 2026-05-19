@@ -21,8 +21,11 @@ export default ({ strapi }: { strapi: any }) => ({
     if (!termo) return ctx.badRequest("Nenhum termo disponível para aceite.");
 
     const acceptedAt = new Date().toISOString();
-    const termoDocumentId = String((termo as any).documentId || (termo as any).id || "");
-    const termoVersion = String((termo as any).version || "sem-versao");
+    const termoDocumentId = String((termo as any).documentId ?? (termo as any).id ?? "");
+    // Use explicit version if available, else fall back to title, id or createdAt
+    const termoVersion = String(
+      (termo as any).version ?? (termo as any).title ?? (termo as any).id ?? (termo as any).createdAt ?? new Date().toISOString(),
+    );
 
     // Atualiza o Municipe com a data e o ID do termo aceito
     const municipe = await strapi
@@ -113,10 +116,29 @@ export default ({ strapi }: { strapi: any }) => ({
         });
     }
 
+    // Evita aceitar a MESMA VERSÃO mais de uma vez.
+    let existing = null as any;
+
+    if (termoId) {
+      existing = await strapi.documents("api::term-list.term-list").findFirst({
+        filters: { user: { id: userId }, termo: { id: termoId }, version: termoVersion },
+        fields: ["id"],
+      });
+    } else {
+      existing = await strapi.documents("api::term-list.term-list").findFirst({
+        filters: { user: { id: userId }, termDocumentId: termoDocumentId, version: termoVersion },
+        fields: ["id"],
+      });
+    }
+
+    if (existing) {
+      return ctx.badRequest("Termo já aceito para esta versão.");
+    }
+
     await strapi.documents("api::term-list.term-list").create({
       data: {
         user: userId,
-        termo: (termo as any).id || undefined,
+        termo: termoId || undefined,
         version: termoVersion,
         termDocumentId: termoDocumentId,
         acceptedAt,
